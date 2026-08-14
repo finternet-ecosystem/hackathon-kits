@@ -1,6 +1,18 @@
-# Vouch CDIR Hackathon Kits
+<p align="center">
+  <a href="https://vouch.finance">
+    <img src="docs/vouch.svg" alt="Vouch" width="64" />
+  </a>
+</p>
 
-Four self-contained sandbox kits for the CDIR tracks. Each kit provisions a real Vouch program (policy, merchants, actors, Hooks) and replays a scripted transaction stream against a live backend. Every allow and deny is a genuine rule-engine decision.
+<h1 align="center">Vouch CDIR Hackathon Kits</h1>
+
+<p align="center">
+  <a href="https://cdir-portal.vouch.finance">Developer Portal</a>
+  ·
+  <a href="https://vouch.finance">vouch.finance</a>
+</p>
+
+Each kit provisions a real Vouch program (policy, merchants, actors, Hooks) and replays a scripted transaction stream against a live backend. Every allow and deny is a genuine rule-engine decision.
 
 This repo is a **pure HTTP client**. It needs only Node, your test-mode hackathon API key, and network access to the API. No database, Redis, or cluster credentials.
 
@@ -234,7 +246,7 @@ This repo is not published to npm (`"private": true`). Clone and import from sou
 
 ## MCP
 
-Point Claude Desktop, Claude Code, Cursor, or any JSON-RPC client at the platform MCP endpoint with the **same** hackathon key:
+Point Claude Desktop, Claude Code, or any JSON-RPC MCP client at the platform MCP endpoint with the **same** hackathon key:
 
 ```http
 POST https://cdir.vouch.finance/mcp
