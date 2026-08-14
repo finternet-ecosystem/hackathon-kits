@@ -1,0 +1,168 @@
+{
+  "kitId": "embedded-supervision",
+  "title": "Embedded Supervision",
+  "track": "Track 5",
+  "description": "A real on-chain nutrition-style program (Polygon Amoy \u2014 or a local Hardhat node if Amoy is unreachable, see README). Seeds a treasury deposit and mints+activates REAL on-chain vouchers for 2 beneficiaries (b1, b2, enrolMode:\"chw\") so a supervisory agent has genuine VoucherMinted / VoucherActivated on-chain events to tail with watch-chain.ts and reconcile. A separate pair of self-enrolled beneficiaries (b3, b4) exercises the standard notional payment-flow stream (same mechanism as the other three kits) for run-stream.ts's compliant/violation demonstration \u2014 see README 'Known platform limitations' for why chw-enrolled and payment-flow-testable are two non-overlapping enrollment paths on this platform today.",
+  "program": {
+    "slugPrefix": "embedded-supervision",
+    "name": "Supervised Nutrition Pilot",
+    "currency": "USD",
+    "currencySymbol": "$",
+    "balanceModel": "fixed",
+    "backingType": "usdc_onchain",
+    "settings": {
+      "allowSelfEnrollment": true,
+      "defaultExpiryDays": 90
+    }
+  },
+  "policy": {
+    "tiers": [
+      {
+        "tier": 1,
+        "label": "Standard Benefit",
+        "value": 60,
+        "expiryDays": 90,
+        "categories": [
+          "FOOD"
+        ]
+      }
+    ],
+    "eligibilityRules": [
+      {
+        "fieldKey": "beneficiaryType",
+        "operator": "equals",
+        "value": "welfare-recipient",
+        "tierAssigned": 1,
+        "priority": 1
+      }
+    ],
+    "categories": [
+      {
+        "code": "FOOD",
+        "label": "Food & Groceries"
+      }
+    ]
+  },
+  "merchants": [
+    {
+      "ref": "m1",
+      "name": "Pilot Village Store",
+      "approvedCategories": [
+        "FOOD"
+      ]
+    },
+    {
+      "ref": "m2",
+      "name": "Unregistered Roadside Stall (unapproved)",
+      "approvedCategories": [
+        "FOOD"
+      ]
+    }
+  ],
+  "actors": [
+    {
+      "ref": "b1",
+      "label": "Beneficiary 1 (real on-chain mint demo)",
+      "phone": "9999300001",
+      "fields": {
+        "beneficiaryType": "welfare-recipient",
+        "fullName": "Synthetic Beneficiary 1"
+      },
+      "budget": 60,
+      "enrolMode": "chw"
+    },
+    {
+      "ref": "b2",
+      "label": "Beneficiary 2 (real on-chain mint demo)",
+      "phone": "9999300002",
+      "fields": {
+        "beneficiaryType": "welfare-recipient",
+        "fullName": "Synthetic Beneficiary 2"
+      },
+      "budget": 60,
+      "enrolMode": "chw"
+    },
+    {
+      "ref": "b3",
+      "label": "Beneficiary 3",
+      "phone": "9999300003",
+      "fields": {
+        "beneficiaryType": "welfare-recipient",
+        "fullName": "Synthetic Beneficiary 3"
+      },
+      "budget": 60
+    },
+    {
+      "ref": "b4",
+      "label": "Beneficiary 4",
+      "phone": "9999300004",
+      "fields": {
+        "beneficiaryType": "welfare-recipient",
+        "fullName": "Synthetic Beneficiary 4"
+      },
+      "budget": 60
+    }
+  ],
+  "hooks": [
+    {
+      "name": "Counterparty gate",
+      "event": "redemption",
+      "phase": "pre",
+      "type": "rule",
+      "ruleConfig": {
+        "all": [
+          {
+            "field": "merchant.id",
+            "op": "in",
+            "value": [
+              {
+                "$merchantRef": "m1"
+              }
+            ]
+          }
+        ]
+      },
+      "effect": "deny",
+      "failureBehavior": "block"
+    }
+  ],
+  "violationScript": [
+    {
+      "id": "compliant-redemptions",
+      "label": "Beneficiary (self-enrolled) redeems for groceries \u2014 notional payment-flow path",
+      "violationType": null,
+      "actorRef": "b3",
+      "merchantRef": "m1",
+      "item": {
+        "sku": "FOOD-1",
+        "name": "Grocery basket",
+        "categoryCode": "FOOD",
+        "qty": 1,
+        "unitPrice": 15
+      },
+      "count": 4,
+      "amountJitterPct": 10,
+      "simHourOfWeek": 34,
+      "simHourSpread": 20,
+      "intervalSeconds": 30,
+      "expectAllowed": true
+    },
+    {
+      "id": "unapproved-counterparty",
+      "label": "A redemption attempt against an unregistered merchant id",
+      "violationType": "unapproved_counterparty",
+      "actorRef": "b4",
+      "merchantRef": "m2",
+      "item": {
+        "sku": "FOOD-BAD",
+        "name": "Grocery basket (wrong merchant simulated via cap)",
+        "categoryCode": "FOOD",
+        "qty": 1,
+        "unitPrice": 15
+      },
+      "count": 2,
+      "simHourOfWeek": 58,
+      "expectAllowed": false
+    }
+  ]
+}

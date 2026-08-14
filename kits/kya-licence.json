@@ -1,0 +1,363 @@
+{
+  "kitId": "kya-licence",
+  "title": "KY-A Licence",
+  "track": "Track 4",
+  "description": "Same procurement-mandate base as Kit 1 (Agent Spending Mandate) plus the agent-identity lifecycle: mid-stream revocation, a post-revocation reuse attempt, a delegation-chain-depth abuse attempt (grandchild), and a re-verification read. Uses AI Voucher (AiVoucher) ids as the agent identity handle for now \u2014 workstream 06 (agent passport / did:nfh) has not landed; see README 'Upgrade path' for what changes once it does.",
+  "program": {
+    "slugPrefix": "kya-licence",
+    "name": "KY-A Agent Licensing",
+    "currency": "USD",
+    "currencySymbol": "$",
+    "balanceModel": "fixed",
+    "backingType": "usdc_onchain",
+    "settings": {
+      "allowSelfEnrollment": true,
+      "defaultExpiryDays": 90
+    }
+  },
+  "policy": {
+    "tiers": [
+      {
+        "tier": 1,
+        "label": "Parent Mandate",
+        "value": 100000,
+        "expiryDays": 90,
+        "categories": [
+          "OFFICE",
+          "LOGISTICS",
+          "SOFTWARE"
+        ]
+      },
+      {
+        "tier": 2,
+        "label": "Sub-Agent Mandate",
+        "value": 20000,
+        "expiryDays": 90,
+        "categories": [
+          "OFFICE",
+          "LOGISTICS",
+          "SOFTWARE"
+        ]
+      }
+    ],
+    "eligibilityRules": [
+      {
+        "fieldKey": "agentRole",
+        "operator": "equals",
+        "value": "agent-parent",
+        "tierAssigned": 1,
+        "priority": 1
+      },
+      {
+        "fieldKey": "agentRole",
+        "operator": "equals",
+        "value": "agent-child",
+        "tierAssigned": 2,
+        "priority": 2
+      }
+    ],
+    "categories": [
+      {
+        "code": "OFFICE",
+        "label": "Office Supplies"
+      },
+      {
+        "code": "LOGISTICS",
+        "label": "Logistics & Freight"
+      },
+      {
+        "code": "SOFTWARE",
+        "label": "Software & SaaS"
+      }
+    ]
+  },
+  "merchants": [
+    {
+      "ref": "m1",
+      "name": "Acme Office Supplies",
+      "approvedCategories": [
+        "OFFICE"
+      ]
+    },
+    {
+      "ref": "m2",
+      "name": "Beacon Logistics Co",
+      "approvedCategories": [
+        "LOGISTICS"
+      ]
+    },
+    {
+      "ref": "m3",
+      "name": "CloudStack Software",
+      "approvedCategories": [
+        "SOFTWARE"
+      ]
+    },
+    {
+      "ref": "m4",
+      "name": "Krypton Courier (unapproved)",
+      "approvedCategories": [
+        "LOGISTICS"
+      ]
+    }
+  ],
+  "actors": [
+    {
+      "ref": "parent",
+      "label": "Licensing Agent (Parent)",
+      "phone": "9999100001",
+      "fields": {
+        "agentRole": "agent-parent",
+        "fullName": "Licensing Agent (Parent)"
+      },
+      "budget": 100000,
+      "mandate": {
+        "label": "Parent Licensing Mandate",
+        "policy": {
+          "quota": {
+            "totalCostUsd": 100000
+          },
+          "delegation": {
+            "maxDepth": 1,
+            "maxChildren": 3,
+            "childConstraints": {
+              "quota": {
+                "totalCostUsd": 20000
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "ref": "child-1",
+      "label": "Sub-Agent 1 (stays active)",
+      "phone": "9999100002",
+      "fields": {
+        "agentRole": "agent-child",
+        "fullName": "Sub-Agent 1"
+      },
+      "budget": 20000,
+      "mandate": {
+        "label": "Sub-Agent 1 Mandate",
+        "parentRef": "parent",
+        "policy": {
+          "quota": {
+            "totalCostUsd": 20000
+          }
+        }
+      }
+    },
+    {
+      "ref": "child-2",
+      "label": "Sub-Agent 2 (revoked mid-stream)",
+      "phone": "9999100003",
+      "fields": {
+        "agentRole": "agent-child",
+        "fullName": "Sub-Agent 2"
+      },
+      "budget": 20000,
+      "mandate": {
+        "label": "Sub-Agent 2 Mandate",
+        "parentRef": "parent",
+        "policy": {
+          "quota": {
+            "totalCostUsd": 20000
+          }
+        }
+      }
+    }
+  ],
+  "hooks": [
+    {
+      "name": "Counterparty + budget gate",
+      "event": "redemption",
+      "phase": "pre",
+      "type": "rule",
+      "description": "Per-tx cap $2,000, merchant must be an approved counterparty.",
+      "ruleConfig": {
+        "all": [
+          {
+            "field": "merchant.id",
+            "op": "in",
+            "value": [
+              {
+                "$merchantRef": "m1"
+              },
+              {
+                "$merchantRef": "m2"
+              },
+              {
+                "$merchantRef": "m3"
+              }
+            ]
+          },
+          {
+            "field": "cart.total",
+            "op": "lte",
+            "value": 2000
+          }
+        ]
+      },
+      "effect": "deny",
+      "failureBehavior": "block"
+    },
+    {
+      "name": "Velocity gate (max ~5 payments / 10 min per agent)",
+      "event": "redemption",
+      "phase": "pre",
+      "type": "rate_limit",
+      "actionConfig": {
+        "windowMs": 600000,
+        "limit": 10,
+        "metric": "count"
+      },
+      "effect": "deny",
+      "failureBehavior": "block"
+    }
+  ],
+  "violationScript": [
+    {
+      "id": "compliant-parent",
+      "label": "Parent makes normal purchases",
+      "violationType": null,
+      "kind": "payment",
+      "actorRef": "parent",
+      "merchantRef": "m1",
+      "item": {
+        "sku": "OFF-1",
+        "name": "Office supplies",
+        "categoryCode": "OFFICE",
+        "qty": 1,
+        "unitPrice": 300
+      },
+      "count": 5,
+      "amountJitterPct": 20,
+      "simHourOfWeek": 13,
+      "simHourSpread": 3,
+      "intervalSeconds": 20,
+      "expectAllowed": true
+    },
+    {
+      "id": "compliant-child1",
+      "label": "Sub-agent 1 makes normal purchases",
+      "violationType": null,
+      "kind": "payment",
+      "actorRef": "child-1",
+      "merchantRef": "m3",
+      "item": {
+        "sku": "SW-1",
+        "name": "SaaS seat",
+        "categoryCode": "SOFTWARE",
+        "qty": 1,
+        "unitPrice": 90
+      },
+      "count": 5,
+      "amountJitterPct": 15,
+      "simHourOfWeek": 37,
+      "simHourSpread": 3,
+      "intervalSeconds": 20,
+      "expectAllowed": true
+    },
+    {
+      "id": "compliant-child2-before-revoke",
+      "label": "Sub-agent 2 transacts normally before its mandate is revoked",
+      "violationType": null,
+      "kind": "payment",
+      "actorRef": "child-2",
+      "merchantRef": "m2",
+      "item": {
+        "sku": "LOG-1",
+        "name": "Freight",
+        "categoryCode": "LOGISTICS",
+        "qty": 1,
+        "unitPrice": 200
+      },
+      "count": 4,
+      "amountJitterPct": 15,
+      "simHourOfWeek": 61,
+      "simHourSpread": 3,
+      "intervalSeconds": 20,
+      "expectAllowed": true
+    },
+    {
+      "id": "unapproved-counterparty",
+      "label": "Parent transacts with a merchant outside the allowlist",
+      "violationType": "unapproved_counterparty",
+      "kind": "payment",
+      "actorRef": "parent",
+      "merchantRef": "m4",
+      "item": {
+        "sku": "LOG-UNAPPROVED",
+        "name": "Unlisted courier run",
+        "categoryCode": "LOGISTICS",
+        "qty": 1,
+        "unitPrice": 150
+      },
+      "count": 5,
+      "amountJitterPct": 10,
+      "simHourOfWeek": 85,
+      "simHourSpread": 3,
+      "intervalSeconds": 40,
+      "expectAllowed": false
+    },
+    {
+      "id": "grandchild-delegation-abuse",
+      "label": "Sub-agent 1 attempts to delegate a further (grandchild) mandate, deeper than its own delegation rights permit",
+      "violationType": "delegation_chain_abuse",
+      "kind": "mandate_op",
+      "actorRef": "child-1",
+      "mandateOp": {
+        "op": "delegate_grandchild",
+        "actorRef": "child-1",
+        "childLabel": "Attempted Grandchild Mandate"
+      },
+      "count": 1,
+      "simHourOfWeek": 59,
+      "expectAllowed": false
+    },
+    {
+      "id": "revoke-child-2",
+      "label": "Admin revokes Sub-agent 2's mandate mid-stream",
+      "violationType": null,
+      "kind": "mandate_op",
+      "actorRef": "child-2",
+      "mandateOp": {
+        "op": "revoke",
+        "actorRef": "child-2"
+      },
+      "count": 1,
+      "simHourOfWeek": 83,
+      "expectAllowed": true
+    },
+    {
+      "id": "revoked-mandate-reuse",
+      "label": "Attempt to delegate a new child from the now-revoked Sub-agent 2 mandate",
+      "violationType": "revoked_mandate_reuse",
+      "kind": "mandate_op",
+      "actorRef": "child-2",
+      "mandateOp": {
+        "op": "issue_child",
+        "actorRef": "child-2",
+        "childLabel": "Attempted post-revocation delegation"
+      },
+      "count": 1,
+      "simHourOfWeek": 84,
+      "expectAllowed": false
+    },
+    {
+      "id": "reverify-parent-ledger",
+      "label": "Re-verification: read the parent mandate's ledger to confirm current status/usage",
+      "violationType": null,
+      "kind": "mandate_op",
+      "actorRef": "parent",
+      "mandateOp": {
+        "op": "get_ledger",
+        "actorRef": "parent"
+      },
+      "count": 1,
+      "simHourOfWeek": 106,
+      "expectAllowed": true
+    }
+  ]
+}

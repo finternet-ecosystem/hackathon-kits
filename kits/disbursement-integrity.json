@@ -1,0 +1,74 @@
+{
+  "kitId": "disbursement-integrity",
+  "title": "Disbursement Integrity",
+  "track": "Track 2",
+  "description": "A welfare-style disbursement program with synthetic beneficiaries (clearly-fake identities/phones only). The seeded policy is DELIBERATELY LOOSE — it only checks category/budget eligibility, nothing else — so a mule-merchant pattern (one merchant, many unrelated beneficiaries, rapid redemptions) and a synthetic duplicate-identity enrollment both go completely undetected on the first run. This is the kit's money shot: a team's agent detects the pattern from the labeled transaction stream, calls propose_rule, a human approves via workstream 07's HITL inbox, and a rerun of the SAME transactions is now blocked. See README 'The rerun-after-tighten loop'.",
+  "program": {
+    "slugPrefix": "disbursement-integrity",
+    "name": "Community Welfare Disbursement",
+    "currency": "USD",
+    "currencySymbol": "$",
+    "balanceModel": "fixed",
+    "backingType": "usdc_onchain",
+    "settings": { "allowSelfEnrollment": true, "defaultExpiryDays": 90 }
+  },
+  "policy": {
+    "tiers": [
+      { "tier": 1, "label": "Welfare Benefit", "value": 300, "expiryDays": 90, "categories": ["FOOD", "MEDICAL", "HOUSEHOLD"] }
+    ],
+    "eligibilityRules": [
+      { "fieldKey": "beneficiaryType", "operator": "equals", "value": "welfare-recipient", "tierAssigned": 1, "priority": 1 }
+    ],
+    "categories": [
+      { "code": "FOOD", "label": "Food & Groceries" },
+      { "code": "MEDICAL", "label": "Medical & Pharmacy" },
+      { "code": "HOUSEHOLD", "label": "Household Goods" }
+    ]
+  },
+  "merchants": [
+    { "ref": "m1", "name": "Neighborhood Grocery", "approvedCategories": ["FOOD"] },
+    { "ref": "m2", "name": "Community Pharmacy", "approvedCategories": ["MEDICAL"] },
+    { "ref": "m3", "name": "Household Essentials Store", "approvedCategories": ["HOUSEHOLD"] },
+    { "ref": "m4", "name": "Quickmart (flagged mule pattern)", "approvedCategories": ["FOOD"] }
+  ],
+  "actors": [
+    { "ref": "b1", "label": "Beneficiary 1", "phone": "9999200001", "fields": { "beneficiaryType": "welfare-recipient", "fullName": "Synthetic Beneficiary 1" }, "budget": 300 },
+    { "ref": "b2", "label": "Beneficiary 2", "phone": "9999200002", "fields": { "beneficiaryType": "welfare-recipient", "fullName": "Synthetic Beneficiary 2" }, "budget": 300 },
+    { "ref": "b3", "label": "Beneficiary 3", "phone": "9999200003", "fields": { "beneficiaryType": "welfare-recipient", "fullName": "Synthetic Beneficiary 3" }, "budget": 300 },
+    { "ref": "b4", "label": "Beneficiary 4", "phone": "9999200004", "fields": { "beneficiaryType": "welfare-recipient", "fullName": "Synthetic Beneficiary 4" }, "budget": 300 },
+    { "ref": "b5", "label": "Beneficiary 5", "phone": "9999200005", "fields": { "beneficiaryType": "welfare-recipient", "fullName": "Synthetic Beneficiary 5" }, "budget": 300 },
+    { "ref": "b6", "label": "Beneficiary 6", "phone": "9999200006", "fields": { "beneficiaryType": "welfare-recipient", "fullName": "Synthetic Beneficiary 6" }, "budget": 300 },
+    { "ref": "b7", "label": "Beneficiary 7", "phone": "9999200007", "fields": { "beneficiaryType": "welfare-recipient", "fullName": "Synthetic Beneficiary 7" }, "budget": 300 },
+    { "ref": "b8", "label": "Beneficiary 8", "phone": "9999200008", "fields": { "beneficiaryType": "welfare-recipient", "fullName": "Synthetic Beneficiary 8" }, "budget": 300 },
+    { "ref": "dup1", "label": "Beneficiary 1 (synthetic duplicate identity, different phone)", "phone": "9999200099", "fields": { "beneficiaryType": "welfare-recipient", "fullName": "Synthetic Beneficiary 1" }, "budget": 300 }
+  ],
+  "hooks": [],
+  "violationScript": [
+    { "id": "compliant-food", "label": "Beneficiaries buy groceries", "violationType": null, "actorRef": "b1", "merchantRef": "m1", "item": { "sku": "FOOD-1", "name": "Grocery basket", "categoryCode": "FOOD", "qty": 1, "unitPrice": 45 }, "count": 12, "amountJitterPct": 20, "simHourOfWeek": 34, "simHourSpread": 30, "intervalSeconds": 20, "expectAllowed": true },
+    { "id": "compliant-medical", "label": "Beneficiaries buy medicine", "violationType": null, "actorRef": "b2", "merchantRef": "m2", "item": { "sku": "MED-1", "name": "Pharmacy purchase", "categoryCode": "MEDICAL", "qty": 1, "unitPrice": 30 }, "count": 10, "amountJitterPct": 20, "simHourOfWeek": 58, "simHourSpread": 30, "intervalSeconds": 20, "expectAllowed": true },
+    { "id": "compliant-household", "label": "Beneficiaries buy household goods", "violationType": null, "actorRef": "b3", "merchantRef": "m3", "item": { "sku": "HH-1", "name": "Household essentials", "categoryCode": "HOUSEHOLD", "qty": 1, "unitPrice": 25 }, "count": 10, "amountJitterPct": 20, "simHourOfWeek": 82, "simHourSpread": 30, "intervalSeconds": 20, "expectAllowed": true },
+    { "id": "mule-pattern-b1", "label": "Beneficiary 1 redeems at the flagged mule merchant", "violationType": "mule_pattern", "actorRef": "b1", "merchantRef": "m4", "item": { "sku": "FOOD-MULE", "name": "Grocery basket", "categoryCode": "FOOD", "qty": 1, "unitPrice": 44 }, "count": 1, "simHourOfWeek": 3, "expectAllowed": true },
+    { "id": "mule-pattern-b4", "label": "Beneficiary 4 redeems at the flagged mule merchant, minutes later", "violationType": "mule_pattern", "actorRef": "b4", "merchantRef": "m4", "item": { "sku": "FOOD-MULE", "name": "Grocery basket", "categoryCode": "FOOD", "qty": 1, "unitPrice": 41 }, "count": 1, "simHourOfWeek": 3, "expectAllowed": true },
+    { "id": "mule-pattern-b5", "label": "Beneficiary 5 redeems at the flagged mule merchant, minutes later", "violationType": "mule_pattern", "actorRef": "b5", "merchantRef": "m4", "item": { "sku": "FOOD-MULE", "name": "Grocery basket", "categoryCode": "FOOD", "qty": 1, "unitPrice": 47 }, "count": 1, "simHourOfWeek": 3, "expectAllowed": true },
+    { "id": "mule-pattern-b6", "label": "Beneficiary 6 redeems at the flagged mule merchant, minutes later", "violationType": "mule_pattern", "actorRef": "b6", "merchantRef": "m4", "item": { "sku": "FOOD-MULE", "name": "Grocery basket", "categoryCode": "FOOD", "qty": 1, "unitPrice": 43 }, "count": 1, "simHourOfWeek": 3, "expectAllowed": true },
+    { "id": "mule-pattern-b7", "label": "Beneficiary 7 redeems at the flagged mule merchant, minutes later", "violationType": "mule_pattern", "actorRef": "b7", "merchantRef": "m4", "item": { "sku": "FOOD-MULE", "name": "Grocery basket", "categoryCode": "FOOD", "qty": 1, "unitPrice": 46 }, "count": 1, "simHourOfWeek": 3, "expectAllowed": true },
+    { "id": "mule-pattern-b8", "label": "Beneficiary 8 redeems at the flagged mule merchant, minutes later", "violationType": "mule_pattern", "actorRef": "b8", "merchantRef": "m4", "item": { "sku": "FOOD-MULE", "name": "Grocery basket", "categoryCode": "FOOD", "qty": 1, "unitPrice": 42 }, "count": 1, "simHourOfWeek": 3, "expectAllowed": true },
+    { "id": "synthetic-identity-payment", "label": "The synthetic-duplicate-identity beneficiary transacts normally, undetected", "violationType": "synthetic_identity", "actorRef": "dup1", "merchantRef": "m1", "item": { "sku": "FOOD-DUP", "name": "Grocery basket", "categoryCode": "FOOD", "qty": 1, "unitPrice": 40 }, "count": 3, "amountJitterPct": 10, "simHourOfWeek": 106, "simHourSpread": 15, "intervalSeconds": 30, "expectAllowed": true }
+  ],
+  "tightenedRule": {
+    "rationale": "Anomalous beneficiary diversity at merchant Quickmart in a short window (6 distinct beneficiaries, ~3am off-hours) is consistent with a mule-merchant fraud pattern. Blocking this merchant pending manual review.",
+    "policyDelta": {
+      "version": "1.0",
+      "name": "Block flagged mule merchant",
+      "rules": {
+        "redemption": {
+          "where": {
+            "all": [
+              { "field": "merchant.id", "op": "not_in", "value": [{ "$merchantRef": "m4" }] }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

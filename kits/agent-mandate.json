@@ -1,0 +1,590 @@
+{
+  "kitId": "agent-mandate",
+  "title": "Agent Spending Mandate",
+  "track": "Track 3",
+  "description": "A procurement AI agent (parent) delegates budgeted, category- and merchant-restricted spending mandates to three sub-agents (children), one of which is deliberately under-funded relative to its siblings. A ~90-transaction stream exercises the mandate's guardrails: per-tx budget cap, merchant counterparty allowlist, category allowlist, business-hours window, and tx velocity \u2014 plus a delegation-chain overspend by the restricted child.",
+  "program": {
+    "slugPrefix": "agent-mandate",
+    "name": "Procurement Mandates",
+    "currency": "USD",
+    "currencySymbol": "$",
+    "balanceModel": "fixed",
+    "backingType": "usdc_onchain",
+    "settings": {
+      "allowSelfEnrollment": true,
+      "defaultExpiryDays": 90
+    }
+  },
+  "policy": {
+    "tiers": [
+      {
+        "tier": 1,
+        "label": "Parent Mandate",
+        "value": 100000,
+        "expiryDays": 90,
+        "categories": [
+          "OFFICE",
+          "LOGISTICS",
+          "SOFTWARE",
+          "TRAVEL"
+        ]
+      },
+      {
+        "tier": 2,
+        "label": "Sub-Agent Mandate",
+        "value": 20000,
+        "expiryDays": 90,
+        "categories": [
+          "OFFICE",
+          "LOGISTICS",
+          "SOFTWARE",
+          "TRAVEL"
+        ]
+      },
+      {
+        "tier": 3,
+        "label": "Restricted Sub-Agent Mandate",
+        "value": 5000,
+        "expiryDays": 90,
+        "categories": [
+          "OFFICE",
+          "LOGISTICS",
+          "SOFTWARE",
+          "TRAVEL"
+        ]
+      }
+    ],
+    "eligibilityRules": [
+      {
+        "fieldKey": "agentRole",
+        "operator": "equals",
+        "value": "agent-parent",
+        "tierAssigned": 1,
+        "priority": 1
+      },
+      {
+        "fieldKey": "agentRole",
+        "operator": "equals",
+        "value": "agent-child",
+        "tierAssigned": 2,
+        "priority": 2
+      },
+      {
+        "fieldKey": "agentRole",
+        "operator": "equals",
+        "value": "agent-child-restricted",
+        "tierAssigned": 3,
+        "priority": 3
+      }
+    ],
+    "categories": [
+      {
+        "code": "OFFICE",
+        "label": "Office Supplies"
+      },
+      {
+        "code": "LOGISTICS",
+        "label": "Logistics & Freight"
+      },
+      {
+        "code": "SOFTWARE",
+        "label": "Software & SaaS"
+      },
+      {
+        "code": "TRAVEL",
+        "label": "Travel & Lodging"
+      }
+    ]
+  },
+  "merchants": [
+    {
+      "ref": "m1",
+      "name": "Acme Office Supplies",
+      "approvedCategories": [
+        "OFFICE"
+      ]
+    },
+    {
+      "ref": "m2",
+      "name": "Beacon Logistics Co",
+      "approvedCategories": [
+        "LOGISTICS"
+      ]
+    },
+    {
+      "ref": "m3",
+      "name": "CloudStack Software",
+      "approvedCategories": [
+        "SOFTWARE"
+      ]
+    },
+    {
+      "ref": "m4",
+      "name": "Delta Travel Agency",
+      "approvedCategories": [
+        "TRAVEL"
+      ]
+    },
+    {
+      "ref": "m5",
+      "name": "Echo Print & Copy",
+      "approvedCategories": [
+        "OFFICE"
+      ]
+    },
+    {
+      "ref": "m6",
+      "name": "Foxtrot Facilities",
+      "approvedCategories": [
+        "LOGISTICS"
+      ]
+    },
+    {
+      "ref": "m7",
+      "name": "Global Parts Supply",
+      "approvedCategories": [
+        "LOGISTICS"
+      ]
+    },
+    {
+      "ref": "m8",
+      "name": "Horizon Consulting",
+      "approvedCategories": [
+        "SOFTWARE"
+      ]
+    },
+    {
+      "ref": "m9",
+      "name": "Ion Hardware",
+      "approvedCategories": [
+        "OFFICE"
+      ]
+    },
+    {
+      "ref": "m10",
+      "name": "Juniper IT Services",
+      "approvedCategories": [
+        "SOFTWARE"
+      ]
+    },
+    {
+      "ref": "m11",
+      "name": "Krypton Courier (unapproved)",
+      "approvedCategories": [
+        "LOGISTICS"
+      ]
+    },
+    {
+      "ref": "m12",
+      "name": "Lighthouse Catering (unapproved)",
+      "approvedCategories": [
+        "TRAVEL"
+      ]
+    }
+  ],
+  "actors": [
+    {
+      "ref": "parent",
+      "label": "Procurement Agent (Parent)",
+      "phone": "9999000001",
+      "fields": {
+        "agentRole": "agent-parent",
+        "fullName": "Procurement Agent (Parent)"
+      },
+      "budget": 100000,
+      "mandate": {
+        "label": "Parent Procurement Mandate",
+        "policy": {
+          "quota": {
+            "totalCostUsd": 100000
+          },
+          "delegation": {
+            "maxDepth": 1,
+            "maxChildren": 4,
+            "childConstraints": {
+              "quota": {
+                "totalCostUsd": 20000
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "ref": "child-1",
+      "label": "Sub-Agent 1",
+      "phone": "9999000002",
+      "fields": {
+        "agentRole": "agent-child",
+        "fullName": "Sub-Agent 1"
+      },
+      "budget": 20000,
+      "mandate": {
+        "label": "Sub-Agent 1 Mandate",
+        "parentRef": "parent",
+        "policy": {
+          "quota": {
+            "totalCostUsd": 20000
+          }
+        }
+      }
+    },
+    {
+      "ref": "child-2",
+      "label": "Sub-Agent 2",
+      "phone": "9999000003",
+      "fields": {
+        "agentRole": "agent-child",
+        "fullName": "Sub-Agent 2"
+      },
+      "budget": 20000,
+      "mandate": {
+        "label": "Sub-Agent 2 Mandate",
+        "parentRef": "parent",
+        "policy": {
+          "quota": {
+            "totalCostUsd": 20000
+          }
+        }
+      }
+    },
+    {
+      "ref": "child-3",
+      "label": "Sub-Agent 3",
+      "phone": "9999000004",
+      "fields": {
+        "agentRole": "agent-child",
+        "fullName": "Sub-Agent 3"
+      },
+      "budget": 20000,
+      "mandate": {
+        "label": "Sub-Agent 3 Mandate",
+        "parentRef": "parent",
+        "policy": {
+          "quota": {
+            "totalCostUsd": 20000
+          }
+        }
+      }
+    },
+    {
+      "ref": "child-4-restricted",
+      "label": "Sub-Agent 4 (Restricted)",
+      "phone": "9999000005",
+      "fields": {
+        "agentRole": "agent-child-restricted",
+        "fullName": "Sub-Agent 4 (Restricted)"
+      },
+      "budget": 5000,
+      "mandate": {
+        "label": "Sub-Agent 4 (Restricted) Mandate",
+        "parentRef": "parent",
+        "policy": {
+          "quota": {
+            "totalCostUsd": 5000
+          }
+        }
+      }
+    }
+  ],
+  "hooks": [
+    {
+      "name": "Counterparty + budget + business-hours gate",
+      "event": "redemption",
+      "phase": "pre",
+      "type": "rule",
+      "description": "Per-tx cap $2,000, merchant must be one of the 10 approved counterparties, and the transaction must fall within business hours (09:00-17:00).",
+      "ruleConfig": {
+        "all": [
+          {
+            "field": "merchant.id",
+            "op": "in",
+            "value": [
+              {
+                "$merchantRef": "m1"
+              },
+              {
+                "$merchantRef": "m2"
+              },
+              {
+                "$merchantRef": "m3"
+              },
+              {
+                "$merchantRef": "m4"
+              },
+              {
+                "$merchantRef": "m5"
+              },
+              {
+                "$merchantRef": "m6"
+              },
+              {
+                "$merchantRef": "m7"
+              },
+              {
+                "$merchantRef": "m8"
+              },
+              {
+                "$merchantRef": "m9"
+              },
+              {
+                "$merchantRef": "m10"
+              }
+            ]
+          },
+          {
+            "field": "cart.total",
+            "op": "lte",
+            "value": 2000
+          },
+          {
+            "field": "time.hour",
+            "op": "between",
+            "value": [
+              9,
+              17
+            ]
+          }
+        ]
+      },
+      "effect": "deny",
+      "failureBehavior": "block"
+    },
+    {
+      "name": "Velocity gate (max ~5 payments / 10 min per agent)",
+      "event": "redemption",
+      "phase": "pre",
+      "type": "rate_limit",
+      "description": "Per-beneficiary (per-agent) velocity cap \u2014 also the mechanism that catches split-payment structuring. NOTE: this window is measured in REAL wall-clock time (EvaluationAudit.createdAt), independent of X-Sim-Time / K7 simulated time \u2014 see kit README 'Known platform limitations'. Per-actor scenario counts below are deliberately kept at or under this limit so a fast (--speed) automated replay doesn't self-trip the compliant baseline; only the dedicated split-payment-structuring scenario is sized to exceed it.",
+      "actionConfig": {
+        "windowMs": 600000,
+        "limit": 10,
+        "metric": "count"
+      },
+      "effect": "deny",
+      "failureBehavior": "block"
+    }
+  ],
+  "violationScript": [
+    {
+      "id": "compliant-parent-office",
+      "label": "Parent buys office supplies",
+      "violationType": null,
+      "actorRef": "parent",
+      "merchantRef": "m1",
+      "item": {
+        "sku": "OFF-1",
+        "name": "Office supplies bundle",
+        "categoryCode": "OFFICE",
+        "qty": 1,
+        "unitPrice": 350
+      },
+      "count": 3,
+      "amountJitterPct": 20,
+      "simHourOfWeek": 37,
+      "simHourSpread": 3,
+      "intervalSeconds": 20,
+      "expectAllowed": true
+    },
+    {
+      "id": "compliant-parent-logistics",
+      "label": "Parent pays freight",
+      "violationType": null,
+      "actorRef": "parent",
+      "merchantRef": "m2",
+      "item": {
+        "sku": "LOG-1",
+        "name": "Freight shipment",
+        "categoryCode": "LOGISTICS",
+        "qty": 1,
+        "unitPrice": 600
+      },
+      "count": 2,
+      "amountJitterPct": 20,
+      "simHourOfWeek": 61,
+      "simHourSpread": 3,
+      "intervalSeconds": 25,
+      "expectAllowed": true
+    },
+    {
+      "id": "compliant-child1-software",
+      "label": "Sub-agent 1 buys SaaS seats",
+      "violationType": null,
+      "actorRef": "child-1",
+      "merchantRef": "m3",
+      "item": {
+        "sku": "SW-1",
+        "name": "SaaS seat license",
+        "categoryCode": "SOFTWARE",
+        "qty": 2,
+        "unitPrice": 80
+      },
+      "count": 5,
+      "amountJitterPct": 15,
+      "simHourOfWeek": 85,
+      "simHourSpread": 3,
+      "intervalSeconds": 25,
+      "expectAllowed": true
+    },
+    {
+      "id": "compliant-child2-office",
+      "label": "Sub-agent 2 buys office supplies",
+      "violationType": null,
+      "actorRef": "child-2",
+      "merchantRef": "m5",
+      "item": {
+        "sku": "OFF-2",
+        "name": "Printer paper & toner",
+        "categoryCode": "OFFICE",
+        "qty": 3,
+        "unitPrice": 40
+      },
+      "count": 5,
+      "amountJitterPct": 15,
+      "simHourOfWeek": 109,
+      "simHourSpread": 3,
+      "intervalSeconds": 25,
+      "expectAllowed": true
+    },
+    {
+      "id": "compliant-child3-travel",
+      "label": "Sub-agent 3 books travel",
+      "violationType": null,
+      "actorRef": "child-3",
+      "merchantRef": "m4",
+      "item": {
+        "sku": "TRV-1",
+        "name": "Conference travel",
+        "categoryCode": "TRAVEL",
+        "qty": 1,
+        "unitPrice": 450
+      },
+      "count": 3,
+      "amountJitterPct": 15,
+      "simHourOfWeek": 13,
+      "simHourSpread": 3,
+      "intervalSeconds": 25,
+      "expectAllowed": true
+    },
+    {
+      "id": "over-limit-single-tx",
+      "label": "Parent attempts a single transaction over the $2,000 cap",
+      "violationType": "over_limit_single_tx",
+      "actorRef": "parent",
+      "merchantRef": "m1",
+      "item": {
+        "sku": "OFF-BULK",
+        "name": "Bulk furniture order",
+        "categoryCode": "OFFICE",
+        "qty": 1,
+        "unitPrice": 5000
+      },
+      "count": 6,
+      "amountJitterPct": 10,
+      "simHourOfWeek": 37,
+      "simHourSpread": 3,
+      "intervalSeconds": 40,
+      "expectAllowed": false
+    },
+    {
+      "id": "out-of-category",
+      "label": "Parent tries to buy TRAVEL from an OFFICE-only merchant",
+      "violationType": "out_of_category",
+      "actorRef": "parent",
+      "merchantRef": "m1",
+      "item": {
+        "sku": "TRV-MISFIT",
+        "name": "Flight booking",
+        "categoryCode": "TRAVEL",
+        "qty": 1,
+        "unitPrice": 300
+      },
+      "count": 6,
+      "amountJitterPct": 10,
+      "simHourOfWeek": 61,
+      "simHourSpread": 3,
+      "intervalSeconds": 40,
+      "expectAllowed": false
+    },
+    {
+      "id": "unapproved-counterparty",
+      "label": "Parent transacts with a merchant outside the allowlist",
+      "violationType": "unapproved_counterparty",
+      "actorRef": "parent",
+      "merchantRef": "m11",
+      "item": {
+        "sku": "LOG-UNAPPROVED",
+        "name": "Unlisted courier run",
+        "categoryCode": "LOGISTICS",
+        "qty": 1,
+        "unitPrice": 200
+      },
+      "count": 6,
+      "amountJitterPct": 10,
+      "simHourOfWeek": 85,
+      "simHourSpread": 3,
+      "intervalSeconds": 40,
+      "expectAllowed": false
+    },
+    {
+      "id": "out-of-hours-burst",
+      "label": "Sub-agent 1 transacts at 2am, outside business hours",
+      "violationType": "out_of_hours",
+      "actorRef": "child-1",
+      "merchantRef": "m3",
+      "item": {
+        "sku": "SW-NIGHT",
+        "name": "SaaS seat license (off-hours)",
+        "categoryCode": "SOFTWARE",
+        "qty": 1,
+        "unitPrice": 90
+      },
+      "count": 6,
+      "amountJitterPct": 10,
+      "simHourOfWeek": 2,
+      "simHourSpread": 2,
+      "intervalSeconds": 30,
+      "expectAllowed": false
+    },
+    {
+      "id": "split-payment-structuring",
+      "label": "Sub-agent 2 splits a large purchase into 5 just-under-cap transactions within minutes",
+      "violationType": "split_payment_structuring",
+      "actorRef": "child-2",
+      "merchantRef": "m5",
+      "item": {
+        "sku": "OFF-STRUCTURED",
+        "name": "Office equipment (structured)",
+        "categoryCode": "OFFICE",
+        "qty": 1,
+        "unitPrice": 1900
+      },
+      "count": 5,
+      "amountJitterPct": 3,
+      "simHourOfWeek": 107,
+      "simHourSpread": 0,
+      "intervalSeconds": 90,
+      "expectAllowed": false
+    },
+    {
+      "id": "delegation-overspend",
+      "label": "Restricted sub-agent 4 attempts a transaction exceeding its own narrowed budget",
+      "violationType": "delegation_overspend",
+      "actorRef": "child-4-restricted",
+      "merchantRef": "m3",
+      "item": {
+        "sku": "SW-OVERSPEND",
+        "name": "Annual SaaS contract",
+        "categoryCode": "SOFTWARE",
+        "qty": 1,
+        "unitPrice": 6000
+      },
+      "count": 5,
+      "amountJitterPct": 5,
+      "simHourOfWeek": 13,
+      "simHourSpread": 3,
+      "intervalSeconds": 45,
+      "expectAllowed": false
+    }
+  ]
+}
