@@ -1,22 +1,31 @@
-<p align="center">
-  <a href="https://networksforhumanity.org/">
-    <img src="docs/nfh.svg" alt="Networks for Humanity" height="40" />
-  </a>
-  &nbsp;&nbsp;·&nbsp;&nbsp;
-  <a href="https://vouch.finance">
-    <img src="docs/vouch.svg" alt="Vouch" width="64" />
-  </a>
-</p>
+<div align="center">
 
-<h1 align="center">Vouch Hackathon Kits</h1>
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://networksforhumanity.org/">
+        <img src="./docs/nfh.svg" alt="Networks for Humanity" height="32" />
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://vouch.finance/">
+        <img src="./docs/vouch.svg" alt="Vouch" height="32" />
+      </a>
+    </td>
+  </tr>
+</table>
 
-<p align="center">
+<h1>Vouch Hackathon Kits</h1>
+
+<p>
   <a href="https://portal.vouch.finance">Developer Portal</a>
   ·
-  <a href="https://vouch.finance">vouch.finance</a>
+  <a href="https://vouch.finance/">vouch.finance</a>
   ·
   <a href="https://networksforhumanity.org/">networksforhumanity.org</a>
 </p>
+
+</div>
 
 Four self-contained sandbox kits for building supervisory agents on [Vouch](https://vouch.finance/). Each kit provisions a real program (policy, merchants, actors, Hooks) and replays a scripted transaction stream against a live backend.
 
