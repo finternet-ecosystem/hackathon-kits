@@ -79,7 +79,7 @@ export const kitHookSchema = z.object({
   description: z.string().optional(),
   /** Universal Eligibility DSL ConditionGroup — required for type:"rule". Merchant refs appear as {"$merchantRef": "<ref>"} and are resolved to real merchant ids by seed-kit.ts before POSTing. */
   ruleConfig: kitHookConditionSchema.optional(),
-  /** { windowMs, limit, metric: "count" } — required for type:"rate_limit" (per-beneficiary velocity; see hook-engine.ts — NOT per-merchant, see kit README). */
+  /** { windowMs, limit, metric: "count" } — required for type:"rate_limit" (per-beneficiary velocity, not per-merchant; see kit README). */
   actionConfig: z.record(z.string(), z.unknown()).optional(),
   effect: z.enum(["deny", "flag", "review"]).default("deny"),
   failureBehavior: z.enum(["block", "allow"]).default("block"),
@@ -151,13 +151,10 @@ export const kitManifestSchema = z.object({
     /**
      * "self" (default): POST /programs/:slug/self-enrol — caller controls
      * privyUserId (needed so run-stream.ts can quote/authorize payments as
-     * that actor), but this route has NO on-chain mint path at all (verified
-     * by reading program-enrol.ts — always DB-only, regardless of
-     * DEPLOYER_PRIVATE_KEY/contracts). "chw": POST /programs/:slug/enrol —
-     * DOES mint on-chain when a deployer key + contracts are configured, but
-     * never sets beneficiaryPrivyUserId, so /payments/quote (which requires
-     * resolving a beneficiary BY that field) can never be reached for these
-     * actors. No single existing route provides both — see kit 3's README
+     * that actor), but this route does not mint on-chain. "chw": POST
+     * /programs/:slug/enrol — can mint on-chain when contracts are configured,
+     * but never sets a payment identity, so /payments/quote cannot be reached
+     * for these actors. No single route provides both — see kit 3's README
      * "Known platform limitations". Kit 3 uses "chw" to get genuine on-chain
      * mints; every other kit uses the "self" default for payment-flow testing.
      */
@@ -170,10 +167,10 @@ export const kitManifestSchema = z.object({
   violationScript: z.array(kitScenarioTemplateSchema).min(1),
   /**
    * Kit 4 only — the rule proposed after the initial stream reveals
-   * undetected violations. Applied via the REAL POST /proposals ->
-   * /proposals/:id/approve flow (backend/src/api/proposals.ts), never
-   * seeded upfront — that would defeat the "policy is deliberately loose"
-   * point of the kit. See kit README "The rerun-after-tighten loop".
+   * undetected violations. Applied via POST /proposals and
+   * POST /proposals/:id/approve, never seeded upfront. That would defeat the
+   * "policy is deliberately loose" point of the kit. See kit README
+   * "The rerun-after-tighten loop".
    */
   tightenedRule: z.object({
     rationale: z.string().min(1),

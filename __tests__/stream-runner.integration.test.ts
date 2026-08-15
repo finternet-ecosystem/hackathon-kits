@@ -1,6 +1,6 @@
 /**
  * run-stream.ts against a REAL running backend (no database access from this
- * repo — see README "Architecture: why this needs only an API key"). Skip-
+ * repo — see README "Architecture (API-key only)"). Skip-
  * if-unavailable pattern: a genuine no-op (not a failure) in any environment
  * without a reachable backend + admin key, e.g. a bare `npm test` in CI.
  *

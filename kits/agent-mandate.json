@@ -355,7 +355,7 @@
       "event": "redemption",
       "phase": "pre",
       "type": "rate_limit",
-      "description": "Per-beneficiary (per-agent) velocity cap \u2014 also the mechanism that catches split-payment structuring. NOTE: this window is measured in REAL wall-clock time (EvaluationAudit.createdAt), independent of X-Sim-Time / K7 simulated time \u2014 see kit README 'Known platform limitations'. Per-actor scenario counts below are deliberately kept at or under this limit so a fast (--speed) automated replay doesn't self-trip the compliant baseline; only the dedicated split-payment-structuring scenario is sized to exceed it.",
+      "description": "Per-beneficiary (per-agent) velocity cap. Also the mechanism that catches split-payment structuring. This window is measured in real wall-clock time, independent of X-Sim-Time. See kit README 'Known platform limitations'. Per-actor scenario counts below are deliberately kept at or under this limit so a fast (--speed) automated replay does not self-trip the compliant baseline; only the dedicated split-payment-structuring scenario is sized to exceed it.",
       "actionConfig": {
         "windowMs": 600000,
         "limit": 10,

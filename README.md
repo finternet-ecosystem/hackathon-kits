@@ -18,7 +18,7 @@
 <h1>Vouch Hackathon Kits</h1>
 
 <p>
-  <a href="https://portal.vouch.finance">Developer Portal</a>
+  <a href="https://cdir-portal.vouch.finance">Developer Portal</a>
   ·
   <a href="https://vouch.finance/">vouch.finance</a>
   ·
@@ -35,13 +35,13 @@ This repo is a **pure HTTP client**. It needs only Node, your test-mode hackatho
 
 ## Quickstart
 
-1. In the [Developer Portal](https://portal.vouch.finance) open **Hackathon** and click **Enable Hackathon API**. Copy the `sk_test_…` key (shown once).
+1. In the [Developer Portal](https://cdir-portal.vouch.finance) open **Hackathon** and click **Enable Hackathon API**. Copy the `sk_test_…` key (shown once).
 2. Clone this repo, then:
 
 ```bash
 cp .env.example .env
 # Edit .env: paste HACKATHON_ORG_API_KEY; set API_BASE_URL from organizers
-#   API_BASE_URL=https://api.vouch.finance/api/v1
+#   API_BASE_URL=https://cdir.vouch.finance/api/v1
 # Local backend: API_BASE_URL=http://localhost:9393/api/v1
 
 npm install
@@ -61,7 +61,7 @@ npx tsx run-stream.ts --kit=agent-mandate --speed=60
 |------|--------|
 | **Node.js 24+** and `npm` | See `package.json` `engines` |
 | **Hackathon org API key** | Portal → **Enable Hackathon API**. Test-mode key on a **dedicated** hackathon org (not your normal portal org). Kits call `GET /hackathon/orgs/self` and refuse non-hackathon orgs. |
-| **API base URL** | Shared sandbox: `https://api.vouch.finance/api/v1` (organizers may provide a different host). Local: `http://localhost:9393/api/v1`. |
+| **API base URL** | Shared sandbox: `https://cdir.vouch.finance/api/v1`. Local: `http://localhost:9393/api/v1`. |
 
 Organizer batch mint (`POST /hackathon/orgs` + admin key) exists for event ops only. Participants should use self-serve Enable.
 
@@ -69,7 +69,7 @@ Environment variables (also in [`.env.example`](.env.example)):
 
 ```bash
 export HACKATHON_ORG_API_KEY=sk_test_YOUR_HACKATHON_KEY
-export API_BASE_URL=https://api.vouch.finance/api/v1
+export API_BASE_URL=https://cdir.vouch.finance/api/v1
 ```
 
 Flags `--api-key=` and `--base-url=` override env on any command.
@@ -264,7 +264,7 @@ This repo is not published to npm (`"private": true`). Clone and import from sou
 Point Claude Desktop, Claude Code, or any JSON-RPC MCP client at the platform MCP endpoint with the **same** hackathon key:
 
 ```http
-POST https://api.vouch.finance/mcp
+POST https://cdir.vouch.finance/mcp
 x-api-key: sk_test_YOUR_HACKATHON_KEY
 Content-Type: application/json
 Accept: application/json, text/event-stream
