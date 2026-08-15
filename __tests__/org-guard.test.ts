@@ -5,7 +5,7 @@
  * request/response handling in lib/client.ts + lib/org-guard.ts without
  * needing a live backend — this repo's only "org refuses to run" coverage,
  * replacing what used to be a Prisma-backed integration test fixture (not
- * portable outside the platform monorepo — see README "Extraction notes").
+ * portable outside the Vouch platform repo).
  */
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";

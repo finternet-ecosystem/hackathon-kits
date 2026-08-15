@@ -1,5 +1,5 @@
 /**
- * CDIR hackathon org-guard: refuse seed/replay unless GET /hackathon/orgs/self
+ * Vouch hackathon org-guard: refuse seed/replay unless GET /hackathon/orgs/self
  * reports isHackathonOrg:true for the caller's API key.
  *
  * Orgs pass when created via portal Enable Hackathon API or organizer
@@ -10,7 +10,7 @@ import { KitApiClient, KitApiError } from "./client";
 export class NotAHackathonOrgError extends Error {
   constructor(detail: string) {
     super(
-      `Refusing to run: this API key's organization is not a CDIR hackathon org (GET /hackathon/orgs/self reported isHackathonOrg:false). ` +
+      `Refusing to run: this API key's organization is not a hackathon org (GET /hackathon/orgs/self reported isHackathonOrg:false). ` +
         `Enable Hackathon API in the Developer Portal (or use an organizer-provisioned hackathon key). ${detail}`,
     );
     this.name = "NotAHackathonOrgError";

@@ -1,8 +1,8 @@
 /**
- * CDIR hackathon workstream 03 — sandbox kit manifest schema.
+ * Vouch hackathon sandbox kits — kit manifest schema.
  *
  * A "kit manifest" is a declarative description of everything `seed-kit.ts`
- * provisions for one track (program + policy + merchants + actors + hooks)
+ * provisions for one kit scenario (program + policy + merchants + actors + hooks)
  * and everything `run-stream.ts` replays against it (a set of scenario
  * *templates* — not 200 literal JSON rows; `run-stream.ts` expands each
  * template's `count` into concrete transactions at runtime, see
@@ -51,7 +51,7 @@ export const kitMerchantSchema = z.object({
 
 export const kitMandateSchema = z.object({
   label: z.string().min(1),
-  /** AiVoucherPolicy fragment — issued via POST /ai-vouchers (or /ai-vouchers/:id/child when parentRef is set). Identity/budget-declaration handle only; real spend enforcement is the actor's self-enrolled BeneficiaryVoucher + program Hooks (see 03-sandbox-kits.md upgrade-path note re: workstream 06/agent-passport). */
+  /** AiVoucherPolicy fragment — issued via POST /ai-vouchers (or /ai-vouchers/:id/child when parentRef is set). Identity/budget-declaration handle only; real spend enforcement is the actor's self-enrolled BeneficiaryVoucher + program Hooks. Future agent-passport work may collapse this seam. */
   policy: z.record(z.string(), z.unknown()).optional(),
   parentRef: z.string().optional(),
 });

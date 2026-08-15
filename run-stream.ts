@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 /**
- * Vouch CDIR hackathon: run-stream.ts
+ * Vouch hackathon: run-stream.ts
  *
  * Replays a seeded kit's transaction stream against the real public API
  * (intent -> quote -> authorize, or AI Voucher mandate lifecycle) so
@@ -61,7 +61,7 @@ function parseArgs(argv: string[]): CliArgs {
 
 function printHelp(): void {
   console.log(`
-run-stream.ts - replay a CDIR hackathon sandbox kit transaction stream
+run-stream.ts - replay a Vouch hackathon sandbox kit transaction stream
 
 Usage:
   npx tsx run-stream.ts --kit=<id> [--api-key=<key>] [options]

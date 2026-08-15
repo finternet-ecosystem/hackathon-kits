@@ -1,8 +1,8 @@
 {
   "kitId": "disbursement-integrity",
   "title": "Disbursement Integrity",
-  "track": "Track 2",
-  "description": "A welfare-style disbursement program with synthetic beneficiaries (clearly-fake identities/phones only). The seeded policy is DELIBERATELY LOOSE — it only checks category/budget eligibility, nothing else — so a mule-merchant pattern (one merchant, many unrelated beneficiaries, rapid redemptions) and a synthetic duplicate-identity enrollment both go completely undetected on the first run. This is the kit's money shot: a team's agent detects the pattern from the labeled transaction stream, calls propose_rule, a human approves via workstream 07's HITL inbox, and a rerun of the SAME transactions is now blocked. See README 'The rerun-after-tighten loop'.",
+  "track": "Disbursement Integrity",
+  "description": "A welfare-style disbursement program with synthetic beneficiaries (clearly-fake identities/phones only). The seeded policy is DELIBERATELY LOOSE — it only checks category/budget eligibility, nothing else — so a mule-merchant pattern (one merchant, many unrelated beneficiaries, rapid redemptions) and a synthetic duplicate-identity enrollment both go completely undetected on the first run. This is the kit's money shot: a team's agent detects the pattern from the labeled transaction stream, calls propose_rule, a human approves via the HITL inbox, and a rerun of the SAME transactions is now blocked. See README 'The rerun-after-tighten loop'.",
   "program": {
     "slugPrefix": "disbursement-integrity",
     "name": "Community Welfare Disbursement",

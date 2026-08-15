@@ -1,8 +1,8 @@
 {
   "kitId": "kya-licence",
   "title": "KY-A Licence",
-  "track": "Track 4",
-  "description": "Same procurement-mandate base as Kit 1 (Agent Spending Mandate) plus the agent-identity lifecycle: mid-stream revocation, a post-revocation reuse attempt, a delegation-chain-depth abuse attempt (grandchild), and a re-verification read. Uses AI Voucher (AiVoucher) ids as the agent identity handle for now \u2014 workstream 06 (agent passport / did:nfh) has not landed; see README 'Upgrade path' for what changes once it does.",
+  "track": "KY-A Licence",
+  "description": "Same procurement-mandate base as Kit 1 (Agent Spending Mandate) plus the agent-identity lifecycle: mid-stream revocation, a post-revocation reuse attempt, a delegation-chain-depth abuse attempt (grandchild), and a re-verification read. Uses AI Voucher (AiVoucher) ids as the agent identity handle for now. Future agent-passport work may replace this; see README 'Upgrade path'.",
   "program": {
     "slugPrefix": "kya-licence",
     "name": "KY-A Agent Licensing",

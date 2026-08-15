@@ -34,7 +34,7 @@ Requires your portal Enable key and `API_BASE_URL` (root [README](../../README.m
 
 ## Run with a local chain (organizer / advanced)
 
-This path needs a backend you control (Hardhat + MockUSDC + deployer in `backend/.env`). It is not required for the shared CDIR cloud demo.
+This path needs a backend you control (Hardhat + MockUSDC + deployer in `backend/.env`). It is not required for the shared Vouch cloud sandbox.
 
 1. Start Hardhat: `npx hardhat node`
 2. Deploy USDC / set `RPC_URL`, `CHAIN_ID`, `DEPLOYER_PRIVATE_KEY`, `USDC_TOKEN_ADDRESS` on the backend; restart it
@@ -80,7 +80,7 @@ get_audit_trail
 
 ## Limitations
 
-- Shared CDIR deploy may not expose a writable chain to participants; treat on-chain mint as best-effort.
+- The shared Vouch sandbox may not expose a writable chain to participants; treat on-chain mint as best-effort.
 - Amoy reachability depends on your network; local Hardhat is the reliable verification path.
 - Self-enrol never mints on-chain; CHW enrol can mint but cannot feed `/payments/quote` (missing Privy user id).
 - Quote-time payment denials in the stream may not appear on SSE; use audits or `labels.jsonl`.

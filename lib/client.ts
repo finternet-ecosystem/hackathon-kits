@@ -1,10 +1,9 @@
 /**
- * CDIR hackathon workstream 03 — thin HTTP client for the sandbox kit tools.
+ * Vouch hackathon sandbox kits — thin HTTP client for the kit tools.
  *
  * Every mutation seed-kit.ts / run-stream.ts makes goes through this client
- * over real HTTP to the running backend — never a direct Prisma write —
- * so declines, ledger entries, and events are genuine (see 03-sandbox-kits.md
- * "the stream must exercise the real authorization path").
+ * over real HTTP to the running backend — never a direct database write —
+ * so declines, ledger entries, and events are genuine.
  */
 
 export interface KitApiClientOptions {

@@ -1,7 +1,7 @@
 {
   "kitId": "agent-mandate",
   "title": "Agent Spending Mandate",
-  "track": "Track 3",
+  "track": "Agent Spending Mandate",
   "description": "A procurement AI agent (parent) delegates budgeted, category- and merchant-restricted spending mandates to three sub-agents (children), one of which is deliberately under-funded relative to its siblings. A ~90-transaction stream exercises the mandate's guardrails: per-tx budget cap, merchant counterparty allowlist, category allowlist, business-hours window, and tx velocity \u2014 plus a delegation-chain overspend by the restricted child.",
   "program": {
     "slugPrefix": "agent-mandate",

@@ -1,6 +1,6 @@
 # Contributing
 
-This package is the public CDIR kits client. Prefer small, reviewable PRs.
+This package is the public Vouch hackathon kits client. Prefer small, reviewable PRs.
 
 ## Docs
 

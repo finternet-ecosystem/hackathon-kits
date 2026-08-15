@@ -4,15 +4,16 @@
   </a>
 </p>
 
-<h1 align="center">Vouch CDIR Hackathon Kits</h1>
+<h1 align="center">Vouch Hackathon Kits</h1>
 
 <p align="center">
-  <a href="https://cdir-portal.vouch.finance">Developer Portal</a>
+  A <a href="https://networksforhumanity.org/">Networks for Humanity</a> initiative<br />
+  <a href="https://portal.vouch.finance">Developer Portal</a>
   ·
   <a href="https://vouch.finance">vouch.finance</a>
 </p>
 
-Each kit provisions a real Vouch program (policy, merchants, actors, Hooks) and replays a scripted transaction stream against a live backend. Every allow and deny is a genuine rule-engine decision.
+Four self-contained sandbox kits for building supervisory agents on [Vouch](https://vouch.finance/). Each kit provisions a real program (policy, merchants, actors, Hooks) and replays a scripted transaction stream against a live backend.
 
 This repo is a **pure HTTP client**. It needs only Node, your test-mode hackathon API key, and network access to the API. No database, Redis, or cluster credentials.
 
@@ -20,13 +21,13 @@ This repo is a **pure HTTP client**. It needs only Node, your test-mode hackatho
 
 ## Quickstart
 
-1. In the [Developer Portal](https://cdir-portal.vouch.finance) open **Hackathon** and click **Enable Hackathon API**. Copy the `sk_test_…` key (shown once).
+1. In the [Developer Portal](https://portal.vouch.finance) open **Hackathon** and click **Enable Hackathon API**. Copy the `sk_test_…` key (shown once).
 2. Clone this repo, then:
 
 ```bash
 cp .env.example .env
-# Edit .env: paste HACKATHON_ORG_API_KEY; keep API_BASE_URL for CDIR
-#   API_BASE_URL=https://cdir.vouch.finance/api/v1
+# Edit .env: paste HACKATHON_ORG_API_KEY; set API_BASE_URL from organizers
+#   API_BASE_URL=https://api.vouch.finance/api/v1
 # Local backend: API_BASE_URL=http://localhost:9393/api/v1
 
 npm install
@@ -46,7 +47,7 @@ npx tsx run-stream.ts --kit=agent-mandate --speed=60
 |------|--------|
 | **Node.js 24+** and `npm` | See `package.json` `engines` |
 | **Hackathon org API key** | Portal → **Enable Hackathon API**. Test-mode key on a **dedicated** hackathon org (not your normal portal org). Kits call `GET /hackathon/orgs/self` and refuse non-hackathon orgs. |
-| **API base URL** | Shared: `https://cdir.vouch.finance/api/v1`. Local: `http://localhost:9393/api/v1`. |
+| **API base URL** | Shared sandbox: `https://api.vouch.finance/api/v1` (organizers may provide a different host). Local: `http://localhost:9393/api/v1`. |
 
 Organizer batch mint (`POST /hackathon/orgs` + admin key) exists for event ops only. Participants should use self-serve Enable.
 
@@ -54,7 +55,7 @@ Environment variables (also in [`.env.example`](.env.example)):
 
 ```bash
 export HACKATHON_ORG_API_KEY=sk_test_YOUR_HACKATHON_KEY
-export API_BASE_URL=https://cdir.vouch.finance/api/v1
+export API_BASE_URL=https://api.vouch.finance/api/v1
 ```
 
 Flags `--api-key=` and `--base-url=` override env on any command.
@@ -63,7 +64,7 @@ Flags `--api-key=` and `--base-url=` override env on any command.
 
 ## Kits
 
-| Kit id | Track | What it demonstrates |
+| Kit id | Scenario | What it demonstrates |
 |--------|-------|----------------------|
 | [`agent-mandate`](kits/agent-mandate/README.md) | Agent Spending Mandate | Parent + sub-agent mandates; per-tx cap, merchant/category allowlists, hours, velocity, delegation overspend |
 | [`kya-licence`](kits/kya-licence/README.md) | KY-A Licence | Mandate lifecycle: revoke, post-revoke reuse, delegation-depth abuse, ledger re-verify |
@@ -249,7 +250,7 @@ This repo is not published to npm (`"private": true`). Clone and import from sou
 Point Claude Desktop, Claude Code, or any JSON-RPC MCP client at the platform MCP endpoint with the **same** hackathon key:
 
 ```http
-POST https://cdir.vouch.finance/mcp
+POST https://api.vouch.finance/mcp
 x-api-key: sk_test_YOUR_HACKATHON_KEY
 Content-Type: application/json
 Accept: application/json, text/event-stream

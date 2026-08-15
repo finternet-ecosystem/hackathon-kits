@@ -1,7 +1,7 @@
 {
-  "name": "vouch-cdir-hackathon-kits",
+  "name": "vouch-hackathon-kits",
   "version": "1.0.0",
-  "description": "Vouch CDIR hackathon sandbox kits: seed and replay four track scenarios against a live Vouch PBV backend using only an API key.",
+  "description": "Vouch hackathon sandbox kits: seed and replay four supervision scenarios against a live Vouch backend using only an API key.",
   "license": "MIT",
   "private": true,
   "engines": {

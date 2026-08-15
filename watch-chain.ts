@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 /**
- * Vouch CDIR hackathon: watch-chain.ts (Kit 3 Embedded Supervision)
+ * Vouch hackathon: watch-chain.ts (Kit 3 Embedded Supervision)
  *
  * Tails Factory + Treasury events over ethers.js. Pass --factory and
  * --treasury explicitly (fetch from GET /programs/:slug → programContracts).
