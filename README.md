@@ -1,4 +1,8 @@
 <p align="center">
+  <a href="https://networksforhumanity.org/">
+    <img src="docs/nfh.svg" alt="Networks for Humanity" height="40" />
+  </a>
+  &nbsp;&nbsp;·&nbsp;&nbsp;
   <a href="https://vouch.finance">
     <img src="docs/vouch.svg" alt="Vouch" width="64" />
   </a>
@@ -7,10 +11,11 @@
 <h1 align="center">Vouch Hackathon Kits</h1>
 
 <p align="center">
-  A <a href="https://networksforhumanity.org/">Networks for Humanity</a> initiative<br />
   <a href="https://portal.vouch.finance">Developer Portal</a>
   ·
   <a href="https://vouch.finance">vouch.finance</a>
+  ·
+  <a href="https://networksforhumanity.org/">networksforhumanity.org</a>
 </p>
 
 Four self-contained sandbox kits for building supervisory agents on [Vouch](https://vouch.finance/). Each kit provisions a real program (policy, merchants, actors, Hooks) and replays a scripted transaction stream against a live backend.
@@ -318,6 +323,7 @@ Manifest fields stay close to API bodies: `program`, `policy`, `merchants`, `act
 ```
 .
 ├── seed-kit.ts / run-stream.ts / watch-chain.ts
+├── docs/                 # vouch.svg, nfh.svg
 ├── kits/                 # manifests + per-kit READMEs
 ├── lib/                  # client, org-guard, expand, state, labels, …
 ├── __tests__/
