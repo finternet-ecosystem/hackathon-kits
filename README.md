@@ -36,12 +36,11 @@ This repo is a **pure HTTP client**. It needs only Node, your test-mode hackatho
 ## Quickstart
 
 1. In the [Developer Portal](https://cdir-portal.vouch.finance), open [**Hackathon**](https://cdir-portal.vouch.finance/hackathon) and, under **Enable Hackathon API**, click **Create hackathon key**. Copy the `sk_test_…` key (shown once).
-2. Clone [this repo](https://github.com/finternet-ecosystem/hackathon-kits) and check out the `feat/generalise-kits` branch (not yet on `main`):
+2. Clone [this repo](https://github.com/finternet-ecosystem/hackathon-kits):
 
 ```bash
 git clone https://github.com/finternet-ecosystem/hackathon-kits.git
 cd hackathon-kits
-git checkout feat/generalise-kits
 ```
 
 Then:
@@ -77,7 +76,7 @@ This is steps 4–5 of the full flow (enable → seed → run → **Arena** → 
 
 | Need | Detail |
 |------|--------|
-| **Node.js 24+** and `npm` | See `package.json` `engines` |
+| **Node.js 20+** and `npm` | See `package.json` `engines` |
 | **Hackathon org API key** | Portal → **Enable Hackathon API**. Test-mode key on a **dedicated** hackathon org (not your normal portal org). Kits call `GET /hackathon/orgs/self` and refuse non-hackathon orgs. |
 | **API base URL** | Shared sandbox: `https://cdir.vouch.finance/api/v1`. Local: `http://localhost:9393/api/v1`. |
 
@@ -135,18 +134,31 @@ Expands scenario templates, calls real `/payments/*` or AI voucher lifecycle rou
 Companion for **embedded-supervision**. Tails Factory + Treasury events over an RPC (Amoy or local Hardhat).
 
 ```bash
-# Required today: pass addresses explicitly
+# Resolve addresses from a seeded kit (GET /programs/<slug> → programContracts)
+npx tsx watch-chain.ts --kit=embedded-supervision --org=<orgId>
+
+# Or pass addresses explicitly
 npx tsx watch-chain.ts \
   --factory=0x... \
   --treasury=0x... \
   --rpc-url=http://127.0.0.1:8545
-
-# Addresses: GET /programs/<slug> → program.programContracts
-# --kit / --org are accepted but do not yet load addresses from the state file
-# (the script tells you to fetch them from the API).
 ```
 
+`--kit`/`--org` needs an API key (`--api-key` or `$HACKATHON_ORG_API_KEY`). Explicit `--factory`/`--treasury` win over the resolved pair.
+
 Default RPC: `$RPC_URL` or `http://127.0.0.1:8545`.
+
+### approve-proposal.ts
+
+Companion for **disbursement-integrity**. Approves a proposal created by `POST /proposals`, closing the propose → approve → rerun loop.
+
+```bash
+export VOUCH_PORTAL_TOKEN=<portal session token>
+npx tsx approve-proposal.ts --proposal-id=<id>
+# or: npm run approve -- --proposal-id=<id>
+```
+
+Approving needs a different actor than the proposer, so this uses your portal session token rather than the hackathon API key. See [Kit 4's README](kits/disbursement-integrity/README.md#rerun-after-tighten).
 
 ---
 
@@ -252,7 +264,7 @@ Each instance carries `actorRef`, `merchantRef`, `item`, `violationType`, `simHo
 | Explain-before-spend agent | MCP `simulate_policy` or REST, then authorize only if allowed |
 | Anomaly detector | `runStream` + compare `outcomes[].allowed` vs `labels.jsonl` |
 | Mandate supervisor | Poll `GET /ai-vouchers/:id/ledger` using ids from state sidecar |
-| On-chain supervisor (Kit 3) | Seed, then `GET /programs/:slug` for contract addresses + `watch-chain.ts` |
+| On-chain supervisor (Kit 3) | Seed, then `watch-chain.ts --kit/--org` (it resolves contract addresses itself) |
 | Policy tighten loop (Kit 4) | Detect mule pattern, `POST /proposals`, rerun with `--after-tighten` |
 
 ### Common pitfalls
@@ -306,9 +318,9 @@ Honest platform behavior these kits run into:
 | **Velocity Hooks** | Rate limits use **wall-clock** time, not `X-Sim-Time`. Very high `--speed` can collide with caps. Kit scenario counts are sized to stay under default caps. |
 | **No program reset** | There is no public “wipe program” API. Need a fresh world? Ask organizers for a new org, or Enable on another portal account. `rotate` remints the key on the same org; it does not clear programs. |
 | **Kit 3 chain ops** | Real on-chain mint needs contracts configured on the shared backend. Without them, CHW enrol falls back to off-chain enrollment. CHW-enrolled actors cannot run `/payments/quote`. The kit splits actors: mint vs payment stream. |
-| **watch-chain flags** | Pass `--factory` and `--treasury` explicitly. `--kit`/`--org` do not yet hydrate addresses from the sidecar. |
+| **watch-chain flags** | `--kit`/`--org` resolves the addresses via `GET /programs/:slug`, so it needs an API key and a program whose contracts are deployed. Pass `--factory`/`--treasury` explicitly if you deployed them yourself. |
 | **Phone format** | Self-enrol accepts a narrow phone shape; synthetics use `9999…` numbers. |
-| **Second actor for Kit 4 approve** | Approving a proposal needs a different actor than the one who proposed it — your `program_manager` API key can propose but can't approve its own proposal. You don't need a second key or organizer help: **Enable Hackathon API** also makes you an `org_owner` member of the org, so approve using your portal session token instead of your API key. See [Kit 4's README](kits/disbursement-integrity/README.md#rerun-after-tighten). |
+| **Second actor for Kit 4 approve** | Approving a proposal needs a different actor than the one who proposed it — your `program_manager` API key can propose but can't approve its own proposal. You don't need a second key or organizer help: **Enable Hackathon API** also makes you an `org_owner` member of the org, so approve with `approve-proposal.ts` and your portal session token instead of your API key. See [Kit 4's README](kits/disbursement-integrity/README.md#rerun-after-tighten). |
 | **Arena** | The eval harness referenced in some hackathon materials ("point Arena at the org") lives in this repo at [`arena/`](arena/README.md) — see the Quickstart above for steps 4–5. Only the `agent-mandate` (Kit 1) scenario is shipped today; the `llm-adversary` persona and the `scorer.ts --baseline` comparison mode are unfinished (see `arena/README.md` "Known limitations"). |
 
 Per-kit READMEs expand on track-specific caveats.
@@ -326,7 +338,7 @@ Per-kit READMEs expand on track-specific caveats.
 | Few/no `payment.declined` on SSE | Quote-time denials may not emit SSE events | Use MCP `get_audit_trail`, REST audits, or kit labels |
 | Seed no-op but empty world expected | Idempotent seed | New org, or different kit id |
 | Kit 3 no chain events | Contracts or RPC not configured | Ask organizers, or pass correct `--rpc-url` and contract addresses from `GET /programs/:slug` |
-| Kit 4 approve `403` | Approver lacks `proposals:approve` | Use organizer-minted `team_admin` key |
+| Kit 4 approve `403` | API key can't approve its own proposal | Approve with your portal session token: `npx tsx approve-proposal.ts --proposal-id=<id>` with `VOUCH_PORTAL_TOKEN` set. No organizer help needed. |
 
 ---
 
@@ -350,7 +362,7 @@ Manifest fields stay close to API bodies: `program`, `policy`, `merchants`, `act
 
 ```
 .
-├── seed-kit.ts / run-stream.ts / watch-chain.ts
+├── seed-kit.ts / run-stream.ts / watch-chain.ts / approve-proposal.ts
 ├── docs/                 # vouch.svg, nfh.svg
 ├── kits/                 # manifests + per-kit READMEs
 ├── lib/                  # client, org-guard, expand, state, labels, …

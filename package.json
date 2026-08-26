@@ -5,12 +5,13 @@
   "license": "MIT",
   "private": true,
   "engines": {
-    "node": ">=24"
+    "node": ">=20"
   },
   "scripts": {
     "seed": "tsx seed-kit.ts",
     "run": "tsx run-stream.ts",
     "watch-chain": "tsx watch-chain.ts",
+    "approve": "tsx approve-proposal.ts",
     "test": "tsx --test __tests__/*.test.ts",
     "test:integration": "tsx --test __tests__/*.integration.test.ts",
     "test:all": "tsx --test __tests__/*.test.ts __tests__/*.integration.test.ts"
@@ -22,6 +23,6 @@
   "devDependencies": {
     "tsx": "^4.23.12",
     "typescript": "^5.9.3",
-    "@types/node": "^24.0.0"
+    "@types/node": "^20.0.0"
   }
 }

@@ -45,18 +45,21 @@ This path needs a backend you control (Hardhat + MockUSDC + deployer in `backend
 ## Watching the chain
 
 ```bash
-# 1. Resolve addresses
+# Resolve addresses from the seeded kit and tail events
+npx tsx watch-chain.ts --kit=embedded-supervision --org=<orgId> \
+  --rpc-url=http://127.0.0.1:8545
+
+# Or look the addresses up yourself and pass them
 curl -s "$API_BASE_URL/programs/embedded-supervision-<org-suffix>" \
   -H "x-api-key: $HACKATHON_ORG_API_KEY" | jq .program.programContracts
 
-# 2. Tail events (addresses required today)
 npx tsx watch-chain.ts \
   --factory=<factoryAddress> \
   --treasury=<treasuryAddress> \
   --rpc-url=http://127.0.0.1:8545
 ```
 
-`--kit` / `--org` are accepted but **do not** load addresses from the state sidecar yet. The script errors with a pointer to `GET /programs/:slug` → `programContracts`. Pass `--factory` and `--treasury` explicitly.
+With `--kit` / `--org` the script reads the state sidecar for the program slug and resolves `programContracts` from `GET /programs/:slug`, so it needs an API key (`--api-key` or `$HACKATHON_ORG_API_KEY`). If the program has no deployed contracts it says so; explicit `--factory` / `--treasury` always win.
 
 Events: Factory `VoucherMinted` / `VoucherActivated` / redemption / expiry; Treasury `Deposited` / `Locked` / `Released` / `Reclaimed`.
 

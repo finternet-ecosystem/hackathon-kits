@@ -58,13 +58,10 @@ curl -s -X POST "$API_BASE_URL/proposals" \
     }
   }'
 
-# 2. Approve (your PORTAL SESSION, not your API key — a different actor
-#    is what satisfies the "proposer != approver" guardrail). Get a bearer
-#    token: in the portal, open DevTools -> Network tab, make any request
-#    (e.g. reload the Hackathon page), and copy the "Authorization: Bearer
-#    <token>" header from one of the /api/* requests.
-curl -s -X POST "$API_BASE_URL/proposals/<proposalId>/approve" \
-  -H "Authorization: Bearer $PORTAL_SESSION_TOKEN"
+# 2. Approve (your portal session, which is the different actor that
+#    satisfies the "proposer != approver" guardrail)
+export VOUCH_PORTAL_TOKEN=<your portal session token>
+npx tsx approve-proposal.ts --proposal-id=<proposalId>
 
 # 3. Rerun mule scenarios only
 npx tsx run-stream.ts --kit=disbursement-integrity \
@@ -72,6 +69,17 @@ npx tsx run-stream.ts --kit=disbursement-integrity \
 ```
 
 Do not rely on MCP `propose_rule` for this loop; it still targets a legacy draft endpoint.
+
+### Getting your portal session token
+
+`approve-proposal.ts` reads `VOUCH_PORTAL_TOKEN` (or `--token=<jwt>`). If the portal's **Hackathon** page offers a copy-session-token control, use that. Otherwise read it off a request the portal already makes:
+
+1. Open the portal and press **F12** to open DevTools, then select the **Network** tab.
+2. Reload the Hackathon page.
+3. Click any `/api/*` request and find `Authorization: Bearer <token>` under its request headers.
+4. Copy the token. Pasting the whole `Bearer <token>` value also works; the script strips the prefix.
+
+Portal tokens are short-lived. `approve-proposal.ts` reports a `401` as an expired token rather than a generic failure, so copy a fresh one and rerun if you see it.
 
 ## Build ideas
 
@@ -89,6 +97,6 @@ Prefer REST for propose/approve as above. Many denials never appear as `payment.
 
 ## Limitations
 
-- Approve needs a **different actor** than the one who proposed — use your portal session (see "Rerun after tighten" above), not a second hackathon API key. You don't need to ask organizers for anything to complete this loop.
+- Approve needs a **different actor** than the one who proposed. Run `approve-proposal.ts` with your portal session token (see "Rerun after tighten" above), not a second hackathon API key. You don't need to ask organizers for anything to complete this loop.
 - `propose_rule` MCP ≠ `POST /proposals`.
 - Approval path historically had a Hook phase bug on older builds; current platform builds should have the fix. If approved rules never fire, tell organizers.

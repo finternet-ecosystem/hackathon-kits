@@ -37,7 +37,9 @@ export class KitApiClient {
       method,
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": this.opts.apiKey,
+        // Omitted rather than sent empty so callers that authenticate another
+        // way (approve-proposal.ts uses a portal bearer token) send no key at all.
+        ...(this.opts.apiKey ? { "x-api-key": this.opts.apiKey } : {}),
         ...extraHeaders,
       },
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
