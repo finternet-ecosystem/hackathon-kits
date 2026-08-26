@@ -4,6 +4,9 @@
   "private": true,
   "description": "Vouch hackathon arena: standalone package of continuously-running synthetic transacting agents (compliant + malicious) against a Vouch org, plus a precision/recall/latency-to-detection scorer. A pure HTTP client of the platform, runnable standalone and shippable to teams.",
   "main": "src/engine.ts",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "test": "NODE_NO_WARNINGS=1 npx tsx --test test/**/*.test.ts",
     "engine": "npx tsx src/engine.ts",
@@ -17,7 +20,7 @@
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^24.0.0",
+    "@types/node": "^20.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.9.3"
   }

@@ -7,12 +7,11 @@ latency-to-detection) against ground truth. This is the eval harness for
 step 4 of the hackathon flow: seed a kit, run scenarios, point Arena at the
 org, generate a scoring report.
 
-**This is a pure HTTP client of the platform.** It has zero imports from the
-Vouch backend's source — everything here talks to a running Vouch backend
-over its public REST API using an org's own API key, the same way any
-external team would. That's deliberate: this package must be runnable
-standalone, and shippable to hackathon teams to run against their own org,
-without a backend checkout.
+**This is a pure HTTP client of the platform.** Everything here talks to a
+running Vouch backend over its public REST API using an org's own API key,
+the same way any external team would. That's deliberate: this package must
+be runnable standalone, and shippable to hackathon teams to run against
+their own org.
 
 ## Quickstart
 

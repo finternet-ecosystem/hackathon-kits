@@ -12,10 +12,8 @@
  * this entirely and hand `scorer.ts` a flags JSONL file directly (see
  * scorer.ts --flags=<path>).
  *
- * Deliberately plain `node:http` — arena has no runtime dependency on
- * Express (that's the PLATFORM's framework; arena is a client of the
- * platform, not part of it) and this surface is tiny (one write route, one
- * read route).
+ * Deliberately plain `node:http` — this surface is tiny (one write route,
+ * one read route), so arena takes no HTTP-framework dependency for it.
  */
 import http from "node:http";
 import fs from "node:fs";

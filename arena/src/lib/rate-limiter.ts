@@ -3,11 +3,10 @@
  * conservatively (<=20/min/org), well under the platform's own rate limits.
  *
  * This is a SELF-imposed cap, independent of (and much stricter than) the
- * platform's own `globalRateLimit` (600/min, IP-scoped — see
- * `backend/src/middleware/rate-limit.ts`) — the arena should never be the
- * reason a demo org's key gets rate-limited, and 20/min leaves ~30x
- * headroom under the platform's actual ceiling even if several personas
- * run concurrently against the same org.
+ * platform's own published rate limit (600/min, which the API enforces with
+ * HTTP 429) — the arena should never be the reason a demo org's key gets
+ * rate-limited, and 20/min leaves ~30x headroom under that ceiling even if
+ * several personas run concurrently against the same org.
  *
  * Sliding-window token bucket, one instance per orgId. `acquire()` resolves
  * once a slot is available (may await a real delay) — callers await it

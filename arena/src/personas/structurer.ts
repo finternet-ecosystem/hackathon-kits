@@ -43,7 +43,7 @@ export const structurer: Persona = {
 
     // Split totalUsd into `tranches` amounts, each safely under capUsd, jittered but summing close to totalUsd.
     const baseAmount = totalUsd / tranches;
-    const perTrancheCap = capUsd * 0.95; // "just under" the cap, per 03-sandbox-kits.md's own structuring template
+    const perTrancheCap = capUsd * 0.95; // "just under" the cap, matching the kits' own structuring scenario template
     const amounts: number[] = [];
     for (let i = 0; i < tranches; i++) {
       const jitter = 1 + (rng() * 2 - 1) * 0.08;

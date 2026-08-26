@@ -77,9 +77,9 @@ export function expandScenarios(templates: KitScenarioTemplate[], seedKey: strin
  * conditions (Mon-Fri 09:00-17:00) map to hours [9-17, 33-41, 57-65, 81-89,
  * 105-113].
  *
- * Built with `Date.UTC`, not the local `Date` constructor: the backend's
- * `engine/context/time.ts` (`buildTimeContext`) reads `time.hour`/
- * `time.day_of_week` from this timestamp via `getUTCHours()`/`getUTCDay()`.
+ * Built with `Date.UTC`, not the local `Date` constructor: the `time.hour`
+ * and `time.day_of_week` a policy condition evaluates against are read from
+ * this timestamp in UTC (`getUTCHours()`/`getUTCDay()`).
  * Anchoring "hour 9" to UTC here keeps it meaning UTC hour 9 on the server
  * regardless of which timezone this script happens to run in — a hackathon
  * team's own laptop, CI, or the deployed box are not guaranteed to share a

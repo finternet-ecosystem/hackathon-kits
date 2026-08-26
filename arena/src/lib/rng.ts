@@ -8,8 +8,7 @@
  * security-sensitive RNG. Deliberately the same algorithm the repo root's
  * `lib/rng.ts` uses (matching that architecture), but this is arena's OWN
  * copy — arena has zero imports outside `arena/`, by design (see
- * arena/README.md), so teams can run it standalone without a backend
- * checkout.
+ * arena/README.md), so teams can run it standalone.
  */
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;

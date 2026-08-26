@@ -5,8 +5,7 @@
  * No I/O, no network — `src/engine.ts` is the only thing that actually
  * executes actions against the platform. This keeps personas independently
  * unit-testable for determinism (same seed -> same tx sequence + labels)
- * without a live backend, mirroring the "evaluator stays pure computation"
- * discipline `backend/src/engine/` follows for the same reason.
+ * without a live backend.
  */
 
 export interface ActorInfo {
@@ -40,7 +39,7 @@ export interface PersonaItem {
 export interface PersonaAction {
   /** Unique within a run — becomes the labels.jsonl kitScenarioId. */
   kitScenarioId: string;
-  /** Groups actions from the same persona "template" for scorer/report grouping — analogous to 03's templateId. */
+  /** Groups actions from the same persona "template" for scorer/report grouping — analogous to a kit scenario's templateId. */
   templateId: string;
   label: string;
   /** null = compliant (ground truth). Non-null = the specific violation kind this persona intended. */

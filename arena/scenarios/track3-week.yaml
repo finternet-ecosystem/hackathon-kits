@@ -1,4 +1,4 @@
-# Track 3 (Agent Spending Mandate) reference scenario. Targets an org that
+# Kit 1 (Agent Spending Mandate) reference scenario. Targets an org that
 # has already been seeded with Kit 1 (agent-mandate) via, from the repo
 # root:
 #   npx tsx seed-kit.ts --kit=agent-mandate --org=<orgId> --api-key=<key>
@@ -84,8 +84,7 @@ merchants:
     approvedCategories: [TRAVEL]
 
 # 73 transaction instances total across 7 personas — comfortably completes
-# in well under 10 minutes wall-clock at simTimeSpeed=60 (see
-# arena/README.md "Verified acceptance run" for a real measured time).
+# in well under 10 minutes wall-clock at simTimeSpeed=60.
 personas:
   - type: compliant-shopper
     count: 30

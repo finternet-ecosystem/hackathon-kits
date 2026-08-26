@@ -1,9 +1,9 @@
 /**
  * Thin HTTP client for the arena — every persona action goes over real HTTP
- * to the running Vouch backend using the org's own API key. Never a direct
- * DB write (arena has no DB access at all — no imports from `backend/src`,
- * see arena/README.md), so declines, ledger entries, and events are
- * genuine, matching the repo root's run-stream.ts architecture.
+ * to the running Vouch backend using the org's own API key. The public REST
+ * API is arena's only way in (see arena/README.md), so declines, ledger
+ * entries, and events are genuine, matching the repo root's run-stream.ts
+ * architecture.
  */
 
 export interface ArenaApiClientOptions {

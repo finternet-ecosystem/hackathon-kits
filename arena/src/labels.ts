@@ -9,8 +9,8 @@
  * as a violation attempt, regardless of whether the platform's policy
  * actually caught it) — never the platform's decision. `kitScenarioId`
  * here is the arena's own scenario-instance id (not literally a "kit"
- * scenario, but the SAME field name/semantics so 03's and 04's labels
- * files are drop-in interchangeable for the scorer).
+ * scenario, but the SAME field name/semantics so a run-stream.ts labels
+ * file and an arena one are drop-in interchangeable for the scorer).
  *
  * Written to arena/artifacts/runs/<runId>/labels.jsonl — arena/artifacts/
  * is gitignored.
@@ -67,7 +67,7 @@ export function readLabels(runId: string): LabelRecord[] {
     .map((l) => JSON.parse(l) as LabelRecord);
 }
 
-/** Read labels from an arbitrary file path (e.g. a 03-produced labels.jsonl, or a fixture in tests). */
+/** Read labels from an arbitrary file path (e.g. a run-stream.ts-produced labels.jsonl, or a fixture in tests). */
 export function readLabelsFromPath(filePath: string): LabelRecord[] {
   if (!fs.existsSync(filePath)) return [];
   return fs

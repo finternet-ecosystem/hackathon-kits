@@ -28,13 +28,13 @@ npx tsx seed-kit.ts --kit=embedded-supervision
 npx tsx run-stream.ts --kit=embedded-supervision --speed=60
 ```
 
-Without `DEPLOYER_PRIVATE_KEY` / contracts on the **backend**, `b1`/`b2` enrol DB-only. `b3`/`b4` still exercise payments.
+Without `DEPLOYER_PRIVATE_KEY` / contracts on the **backend**, `b1`/`b2` enrol without an on-chain mint. `b3`/`b4` still exercise payments.
 
 Requires your portal Enable key and `API_BASE_URL` (root [README](../../README.md)).
 
 ## Run with a local chain (organizer / advanced)
 
-This path needs a backend you control (Hardhat + MockUSDC + deployer in `backend/.env`). It is not required for the shared Vouch cloud sandbox.
+This path needs a backend you control (Hardhat + MockUSDC + a deployer key in that backend's environment). It is not required for the shared Vouch cloud sandbox.
 
 1. Start Hardhat: `npx hardhat node`
 2. Deploy USDC / set `RPC_URL`, `CHAIN_ID`, `DEPLOYER_PRIVATE_KEY`, `USDC_TOKEN_ADDRESS` on the backend; restart it
@@ -69,7 +69,7 @@ Terminal A: `watch-chain.ts`. Terminal B: seed with a live chain. Watch mint/act
 
 ## Build ideas
 
-1. Three-way reconciliation: DB voucher ↔ on-chain balance ↔ ledger entries.
+1. Three-way reconciliation: API-reported voucher ↔ on-chain balance ↔ ledger entries.
 2. Live mint table from `watch-chain` output.
 3. Flag on-chain redemptions without a matching backend authorize audit.
 

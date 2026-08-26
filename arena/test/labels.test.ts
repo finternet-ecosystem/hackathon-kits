@@ -11,7 +11,7 @@ after(() => {
 });
 
 describe("labels — LabelsWriter / readLabels", () => {
-  it("writes JSONL matching 03-sandbox-kits.md's exact format and reads it back", async () => {
+  it("writes JSONL matching the kits' labels.jsonl format exactly and reads it back", async () => {
     const writer = new LabelsWriter(TEST_RUN_ID);
     writer.write({ txnRef: "intent-1", ts: "2026-08-03T09:00:00.000Z", label: "compliant", kitScenarioId: "compliant-shopper-001" });
     writer.write({
@@ -35,7 +35,7 @@ describe("labels — LabelsWriter / readLabels", () => {
     assert.deepEqual(readLabels("nonexistent-run-xyz"), []);
   });
 
-  it("readLabelsFromPath reads an arbitrary file path (e.g. a 03-produced labels.jsonl)", async () => {
+  it("readLabelsFromPath reads an arbitrary file path (e.g. a run-stream.ts-produced labels.jsonl)", async () => {
     const writer = new LabelsWriter(`${TEST_RUN_ID}-alt`);
     writer.write({ txnRef: "x", ts: "2026-08-03T09:00:00.000Z", label: "compliant", kitScenarioId: "s-1" });
     await writer.close();

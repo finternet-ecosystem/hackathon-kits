@@ -1,10 +1,9 @@
 /**
- * colluder-ring (kit-4 style) — a
- * cluster of otherwise-unrelated actors all redeem rapidly at the SAME
- * single merchant in a tight time window ("mule pattern" — one merchant,
- * many beneficiaries, off-hours, per 03-sandbox-kits.md's Kit 4
- * disbursement-integrity violation script). This persona needs MULTIPLE
- * actors (unlike the other six, which each drive one actor) — set
+ * colluder-ring — a cluster of otherwise-unrelated actors all redeem
+ * rapidly at the SAME single merchant in a tight time window ("mule
+ * pattern" — one merchant, many beneficiaries, off-hours), the same
+ * violation the `disbursement-integrity` kit scripts. This persona needs
+ * MULTIPLE actors (unlike the other six, which each drive one actor) — set
  * `count` to the number of actors you want in the ring; it round-robins
  * across `params.actorRefs` (or all world actors if unset), one
  * transaction per actor.

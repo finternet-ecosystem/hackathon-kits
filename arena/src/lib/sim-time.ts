@@ -18,13 +18,12 @@ const SIM_WEEK_START_DAY = 3; // a Monday
 export function simHourToIso(hourOfWeek: number): string {
   const dayOffset = Math.floor(hourOfWeek / 24);
   const hourOfDay = hourOfWeek % 24;
-  // Date.UTC, not the local constructor: this timestamp is sent as
-  // X-Sim-Time to a backend that reads hour/day_of_week in UTC
-  // (engine/context/time.ts). Building it from the CALLER's local
-  // timezone means "hour 9" only lands on the server as hour 9 when
-  // caller and server share a timezone — false on a non-UTC laptop
-  // hitting a UTC-hosted backend, silently shifting every business-hours
-  // check.
+  // Date.UTC, not the local constructor: X-Sim-Time is interpreted in UTC,
+  // so the hour and day-of-week a policy condition sees come from
+  // getUTCHours()/getUTCDay() on this timestamp. Building it from the
+  // CALLER's local timezone means "hour 9" only lands as hour 9 when caller
+  // and server share a timezone — false on a non-UTC laptop hitting a
+  // UTC-hosted backend, silently shifting every business-hours check.
   const d = new Date(Date.UTC(SIM_WEEK_START_YEAR, SIM_WEEK_START_MONTH_INDEX, SIM_WEEK_START_DAY + dayOffset, hourOfDay, 0, 0, 0));
   return d.toISOString();
 }

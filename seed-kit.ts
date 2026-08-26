@@ -83,8 +83,8 @@ async function waitForProgramContracts(client: KitApiClient, slug: string, timeo
   while (Date.now() < deadline) {
     const res = await client.get<{ program: { programContracts?: { factoryAddress?: string; status?: string } | null } }>(`/programs/${slug}`);
     const pc = res.program.programContracts;
-    // "0x" is the placeholder written on a FAILED deploy attempt (see
-    // deploy-contracts.ts) — a truthy string, but not a real address. Only
+    // "0x" is the placeholder factoryAddress reported after a FAILED deploy
+    // attempt — a truthy string, but not a real address. Only
     // status:"ACTIVE" with a real factoryAddress counts as success.
     if (pc?.status === "ACTIVE" && pc.factoryAddress && pc.factoryAddress !== "0x") return true;
     if (pc?.status === "DEPLOY_FAILED") return false;
@@ -135,17 +135,16 @@ async function seedKit(args: CliArgs): Promise<void> {
   const programId = programRes.program.id;
   console.log(`✔ Program "${programSlug}" created (${programId})`);
 
-  // Contract auto-deploy (POST /programs's deployProgramContracts) is
-  // fire-and-forget — the 201 response returns before it finishes. Any kit
-  // with a "chw"-enrolled actor needs the real ProgramContracts row to
-  // exist BEFORE enrolling (program-enrol.ts's on-chain mint branch checks
-  // `contracts && config.deployerKey && valueUSDC > 0n`; without a
-  // ProgramContracts row it silently falls back to DB-only enrollment).
+  // Contract auto-deploy is fire-and-forget — POST /programs returns 201
+  // before it finishes. Any kit with a "chw"-enrolled actor needs
+  // programContracts to be ACTIVE BEFORE enrolling: the enrol route only
+  // takes its on-chain mint path when the program already has deployed
+  // contracts, and otherwise silently enrols off-chain with no mint.
   const needsContracts = manifest.actors.some((a) => (a.enrolMode ?? manifest.program.enrolMode) === "chw");
   if (needsContracts) {
     console.log("  Waiting for on-chain contract auto-deploy...");
     const deployed = await waitForProgramContracts(client, programSlug, 15_000);
-    console.log(deployed ? "  ✔ Contracts deployed" : "  ⚠ Contracts did not appear within 30s — chw-enrolled actors below will fall back to DB-only enrollment");
+    console.log(deployed ? "  ✔ Contracts deployed" : "  ⚠ Contracts did not appear within 15s — chw-enrolled actors below will enrol without an on-chain mint");
   }
 
   // ── 2. Policy ─────────────────────────────────────────────────────────
@@ -200,7 +199,7 @@ async function seedKit(args: CliArgs): Promise<void> {
   // ── 5. Actors (spending wallet + AI Voucher mandate identity) ────────────
   // enrolMode "self" (default, POST .../self-enrol): caller controls
   // privyUserId, so run-stream.ts can quote/authorize payments as this
-  // actor — but this route never mints on-chain (DB-only always).
+  // actor — but this route never mints on-chain.
   // enrolMode "chw" (POST .../enrol, Kit 3 only): mints for real when a
   // deployer key + contracts are configured, but sets no privyUserId, so
   // this actor can never be used in a "payment" kind scenario (no route
@@ -258,9 +257,9 @@ async function seedKit(args: CliArgs): Promise<void> {
       ref: actor.ref,
       beneficiaryId,
       tokenId,
-      // chw-enrolled actors have no beneficiaryPrivyUserId on their
-      // Beneficiary row (see enrolMode note above) — mark clearly rather
-      // than storing a privyUserId that would never actually resolve.
+      // chw-enrolled actors are never given a beneficiaryPrivyUserId (see
+      // enrolMode note above) — mark clearly rather than storing a
+      // privyUserId that would never actually resolve.
       privyUserId: chwMode ? "" : privyUserId,
       mandateId,
       mandateKeyPrefix,
