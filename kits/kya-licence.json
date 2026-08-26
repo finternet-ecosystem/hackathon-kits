@@ -299,7 +299,8 @@
       "simHourOfWeek": 85,
       "simHourSpread": 3,
       "intervalSeconds": 40,
-      "expectAllowed": false
+      "expectAllowed": false,
+      "expectedReasonContains": "merchant.id"
     },
     {
       "id": "grandchild-delegation-abuse",
@@ -314,7 +315,8 @@
       },
       "count": 1,
       "simHourOfWeek": 59,
-      "expectAllowed": false
+      "expectAllowed": false,
+      "expectedReasonContains": "delegation"
     },
     {
       "id": "revoke-child-2",
@@ -343,7 +345,8 @@
       },
       "count": 1,
       "simHourOfWeek": 84,
-      "expectAllowed": false
+      "expectAllowed": false,
+      "expectedReasonContains": "not active"
     },
     {
       "id": "reverify-parent-ledger",

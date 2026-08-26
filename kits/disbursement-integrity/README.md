@@ -31,12 +31,12 @@ Labels mark `mule_pattern` / `synthetic_identity` even when the platform allowed
 
 ## Rerun after tighten
 
-Self-serve **Enable Hackathon API** mints one `program_manager` key. Approval needs `proposals:approve` (`team_admin` / org admin). Ask organizers for a second key on your hackathon org (`mintKey` + `keyRole: "team_admin"`), or use another portal user with an Enable key that can approve.
+`POST /proposals/:id/approve` requires `proposals:approve` scope, and your `program_manager` hackathon API key doesn't have it — nor can the same key approve its own proposal even if it did (`proposedBy` and the approver must differ). You do **not** need a second key or a second team member for this: clicking **Enable Hackathon API** in the portal also made you an `org_owner` **member** of the org through your portal login, and `org_owner` carries full scope for requests authenticated with your **portal session** (not your hackathon API key). So propose with your API key, then approve with your portal session token:
 
 ```bash
 # Resolve m4 id from artifacts/kits/disbursement-integrity-<orgId>.json
 
-# 1. Propose (proposer key)
+# 1. Propose (your hackathon API key)
 curl -s -X POST "$API_BASE_URL/proposals" \
   -H "Content-Type: application/json" \
   -H "x-api-key: $HACKATHON_ORG_API_KEY" \
@@ -58,9 +58,13 @@ curl -s -X POST "$API_BASE_URL/proposals" \
     }
   }'
 
-# 2. Approve (second key with proposals:approve)
+# 2. Approve (your PORTAL SESSION, not your API key — a different actor
+#    is what satisfies the "proposer != approver" guardrail). Get a bearer
+#    token: in the portal, open DevTools -> Network tab, make any request
+#    (e.g. reload the Hackathon page), and copy the "Authorization: Bearer
+#    <token>" header from one of the /api/* requests.
 curl -s -X POST "$API_BASE_URL/proposals/<proposalId>/approve" \
-  -H "x-api-key: $APPROVER_KEY"
+  -H "Authorization: Bearer $PORTAL_SESSION_TOKEN"
 
 # 3. Rerun mule scenarios only
 npx tsx run-stream.ts --kit=disbursement-integrity \
@@ -85,6 +89,6 @@ Prefer REST for propose/approve as above. Many denials never appear as `payment.
 
 ## Limitations
 
-- Need a **second principal** for approve; Enable alone is not enough for the HITL money shot.
+- Approve needs a **different actor** than the one who proposed — use your portal session (see "Rerun after tighten" above), not a second hackathon API key. You don't need to ask organizers for anything to complete this loop.
 - `propose_rule` MCP ≠ `POST /proposals`.
 - Approval path historically had a Hook phase bug on older builds; current platform builds should have the fix. If approved rules never fire, tell organizers.

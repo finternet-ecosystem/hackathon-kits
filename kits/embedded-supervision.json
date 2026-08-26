@@ -162,7 +162,8 @@
       },
       "count": 2,
       "simHourOfWeek": 58,
-      "expectAllowed": false
+      "expectAllowed": false,
+      "expectedReasonContains": "merchant.id"
     }
   ]
 }

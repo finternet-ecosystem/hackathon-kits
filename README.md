@@ -35,8 +35,16 @@ This repo is a **pure HTTP client**. It needs only Node, your test-mode hackatho
 
 ## Quickstart
 
-1. In the [Developer Portal](https://cdir-portal.vouch.finance) open **Hackathon** and click **Enable Hackathon API**. Copy the `sk_test_…` key (shown once).
-2. Clone this repo, then:
+1. In the [Developer Portal](https://cdir-portal.vouch.finance), open [**Hackathon**](https://cdir-portal.vouch.finance/hackathon) and, under **Enable Hackathon API**, click **Create hackathon key**. Copy the `sk_test_…` key (shown once).
+2. Clone [this repo](https://github.com/finternet-ecosystem/hackathon-kits) and check out the `feat/generalise-kits` branch (not yet on `main`):
+
+```bash
+git clone https://github.com/finternet-ecosystem/hackathon-kits.git
+cd hackathon-kits
+git checkout feat/generalise-kits
+```
+
+Then:
 
 ```bash
 cp .env.example .env
@@ -290,7 +298,8 @@ Honest platform behavior these kits run into:
 | **Kit 3 chain ops** | Real on-chain mint needs contracts configured on the shared backend. Without them, CHW enrol falls back to off-chain enrollment. CHW-enrolled actors cannot run `/payments/quote`. The kit splits actors: mint vs payment stream. |
 | **watch-chain flags** | Pass `--factory` and `--treasury` explicitly. `--kit`/`--org` do not yet hydrate addresses from the sidecar. |
 | **Phone format** | Self-enrol accepts a narrow phone shape; synthetics use `9999…` numbers. |
-| **Second key for Kit 4** | Self-serve Enable mints one `program_manager` key. Approve needs `team_admin` (or org admin). Ask organizers to mint a second key with `mintKey` / `keyRole`, or use two portal users. |
+| **Second actor for Kit 4 approve** | Approving a proposal needs a different actor than the one who proposed it — your `program_manager` API key can propose but can't approve its own proposal. You don't need a second key or organizer help: **Enable Hackathon API** also makes you an `org_owner` member of the org, so approve using your portal session token instead of your API key. See [Kit 4's README](kits/disbursement-integrity/README.md#rerun-after-tighten). |
+| **Arena** | The eval harness referenced in some hackathon materials ("point Arena at the org") is an internal, unreleased CLI tool — it is not published in this repo, the portal, or any live URL. If you were told to use it, ask organizers whether it's actually available yet before hunting for it. |
 
 Per-kit READMEs expand on track-specific caveats.
 

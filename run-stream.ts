@@ -96,6 +96,9 @@ interface TemplateSummary {
   allowed: number;
   denied: number;
   expectAllowed: boolean;
+  expectedReasonContains?: string;
+  /** Denial reasons seen for this template (one per denied instance, in order) — checked against expectedReasonContains. */
+  deniedReasons: string[];
 }
 
 function sleep(ms: number): Promise<void> {
@@ -252,12 +255,26 @@ export async function runStream(args: CliArgs): Promise<{ outcomes: ReplayOutcom
 
     let summary = byTemplate.get(instance.templateId);
     if (!summary) {
-      summary = { templateId: instance.templateId, label: instance.label, violationType: instance.violationType, total: 0, allowed: 0, denied: 0, expectAllowed: instance.expectAllowed };
+      summary = {
+        templateId: instance.templateId,
+        label: instance.label,
+        violationType: instance.violationType,
+        total: 0,
+        allowed: 0,
+        denied: 0,
+        expectAllowed: instance.expectAllowed,
+        expectedReasonContains: instance.expectedReasonContains,
+        deniedReasons: [],
+      };
       byTemplate.set(instance.templateId, summary);
     }
     summary.total += 1;
-    if (outcome.allowed) summary.allowed += 1;
-    else summary.denied += 1;
+    if (outcome.allowed) {
+      summary.allowed += 1;
+    } else {
+      summary.denied += 1;
+      summary.deniedReasons.push(outcome.reason ?? "");
+    }
 
     const marker = outcome.allowed ? "ALLOW" : "DENY ";
     console.log(`  [${marker}] ${instance.kitScenarioId} (${instance.label})${outcome.reason ? ` — ${outcome.reason}` : ""}`);
@@ -276,8 +293,28 @@ export async function runStream(args: CliArgs): Promise<{ outcomes: ReplayOutcom
       continue;
     }
     const majorityAllowed = s.allowed >= s.denied;
-    const matches = majorityAllowed === s.expectAllowed;
-    console.log(`${line} — expected ${s.expectAllowed ? "mostly allowed" : "mostly denied"} ${matches ? "✔" : "✖ MISMATCH"}`);
+    const outcomeMatches = majorityAllowed === s.expectAllowed;
+
+    // Outcome alone isn't enough for a violation scenario: a majority-denied
+    // verdict is meaningless if those denials came from the wrong mechanism
+    // (e.g. a rate-limit hook tripping ahead of the merchant-allowlist rule
+    // this scenario is meant to exercise) — see manifest-types.ts's
+    // expectedReasonContains doc.
+    let reasonMatches = true;
+    let reasonNote = "";
+    if (outcomeMatches && !s.expectAllowed && s.expectedReasonContains) {
+      const needle = s.expectedReasonContains.toLowerCase();
+      const matchingDenials = s.deniedReasons.filter((r) => r.toLowerCase().includes(needle)).length;
+      reasonMatches = matchingDenials * 2 >= s.deniedReasons.length; // majority
+      if (!reasonMatches) {
+        const sampleReason = s.deniedReasons.find((r) => r.length > 0) ?? "(no reason captured)";
+        reasonNote = ` — WRONG MECHANISM: denied reason was "${sampleReason}", expected something containing "${s.expectedReasonContains}"`;
+      }
+    }
+
+    const matches = outcomeMatches && reasonMatches;
+    const marker = matches ? "✔" : outcomeMatches ? "✖ WRONG REASON" : "✖ MISMATCH";
+    console.log(`${line} — expected ${s.expectAllowed ? "mostly allowed" : "mostly denied"} ${marker}${reasonNote}`);
   }
 
   console.log(`\nLabels written to: ${labels.path}`);

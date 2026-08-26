@@ -484,7 +484,8 @@
       "simHourOfWeek": 37,
       "simHourSpread": 3,
       "intervalSeconds": 40,
-      "expectAllowed": false
+      "expectAllowed": false,
+      "expectedReasonContains": "cart.total"
     },
     {
       "id": "out-of-category",
@@ -524,7 +525,8 @@
       "simHourOfWeek": 85,
       "simHourSpread": 3,
       "intervalSeconds": 40,
-      "expectAllowed": false
+      "expectAllowed": false,
+      "expectedReasonContains": "merchant.id"
     },
     {
       "id": "out-of-hours-burst",
@@ -544,7 +546,8 @@
       "simHourOfWeek": 2,
       "simHourSpread": 2,
       "intervalSeconds": 30,
-      "expectAllowed": false
+      "expectAllowed": false,
+      "expectedReasonContains": "time.hour"
     },
     {
       "id": "split-payment-structuring",
@@ -564,7 +567,8 @@
       "simHourOfWeek": 107,
       "simHourSpread": 0,
       "intervalSeconds": 90,
-      "expectAllowed": false
+      "expectAllowed": false,
+      "expectedReasonContains": "Velocity"
     },
     {
       "id": "delegation-overspend",
