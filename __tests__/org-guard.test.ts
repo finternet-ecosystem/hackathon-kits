@@ -3,9 +3,7 @@
  * only, refuse otherwise" safety gate seed-kit.ts/run-stream.ts run before
  * touching an org. Mocks global.fetch so this exercises the real HTTP
  * request/response handling in lib/client.ts + lib/org-guard.ts without
- * needing a live backend — this repo's only "org refuses to run" coverage,
- * replacing what used to be a Prisma-backed integration test fixture (not
- * portable outside the platform monorepo — see README "Extraction notes").
+ * needing a live backend — this repo's only "org refuses to run" coverage.
  */
 import { describe, it, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";

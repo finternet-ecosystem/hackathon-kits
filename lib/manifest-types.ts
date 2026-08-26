@@ -1,8 +1,8 @@
 /**
- * CDIR hackathon workstream 03 — sandbox kit manifest schema.
+ * Vouch hackathon sandbox kits — kit manifest schema.
  *
  * A "kit manifest" is a declarative description of everything `seed-kit.ts`
- * provisions for one track (program + policy + merchants + actors + hooks)
+ * provisions for one kit scenario (program + policy + merchants + actors + hooks)
  * and everything `run-stream.ts` replays against it (a set of scenario
  * *templates* — not 200 literal JSON rows; `run-stream.ts` expands each
  * template's `count` into concrete transactions at runtime, see
@@ -51,7 +51,7 @@ export const kitMerchantSchema = z.object({
 
 export const kitMandateSchema = z.object({
   label: z.string().min(1),
-  /** AiVoucherPolicy fragment — issued via POST /ai-vouchers (or /ai-vouchers/:id/child when parentRef is set). Identity/budget-declaration handle only; real spend enforcement is the actor's self-enrolled BeneficiaryVoucher + program Hooks (see 03-sandbox-kits.md upgrade-path note re: workstream 06/agent-passport). */
+  /** AiVoucherPolicy fragment — issued via POST /ai-vouchers (or /ai-vouchers/:id/child when parentRef is set). Identity/budget-declaration handle only; real spend enforcement is the actor's self-enrolled BeneficiaryVoucher + program Hooks. Future agent-passport work may collapse this seam. */
   policy: z.record(z.string(), z.unknown()).optional(),
   parentRef: z.string().optional(),
 });
@@ -79,7 +79,7 @@ export const kitHookSchema = z.object({
   description: z.string().optional(),
   /** Universal Eligibility DSL ConditionGroup — required for type:"rule". Merchant refs appear as {"$merchantRef": "<ref>"} and are resolved to real merchant ids by seed-kit.ts before POSTing. */
   ruleConfig: kitHookConditionSchema.optional(),
-  /** { windowMs, limit, metric: "count" } — required for type:"rate_limit" (per-beneficiary velocity; see hook-engine.ts — NOT per-merchant, see kit README). */
+  /** { windowMs, limit, metric: "count" } — required for type:"rate_limit" (per-beneficiary velocity, not per-merchant; see kit README). */
   actionConfig: z.record(z.string(), z.unknown()).optional(),
   effect: z.enum(["deny", "flag", "review"]).default("deny"),
   failureBehavior: z.enum(["block", "allow"]).default("block"),
@@ -126,6 +126,18 @@ export const kitScenarioTemplateSchema = z.object({
   intervalSeconds: z.number().nonnegative().default(1),
   /** What the CURRENT (as-seeded) policy is expected to decide — used by run-stream.ts's own assertions, never written to labels.jsonl (which only carries ground truth). */
   expectAllowed: z.boolean(),
+  /**
+   * For expectAllowed:false scenarios only — a case-insensitive substring
+   * the actual denial reason must contain for run-stream.ts's verdict to
+   * count this scenario as caught for the RIGHT reason. Without this, the
+   * verdict only checks the coarse allowed/denied majority, so a scenario
+   * denied by an unrelated hook (e.g. a velocity/rate-limit gate tripping
+   * before the merchant-allowlist rule it's meant to exercise gets
+   * evaluated) still prints ✔. Leave unset when the expected mechanism
+   * isn't known statically from the manifest (run-stream.ts falls back to
+   * the coarse check in that case).
+   */
+  expectedReasonContains: z.string().min(1).optional(),
 }).superRefine((val, ctx) => {
   if (val.kind === "payment" && (!val.item || !val.merchantRef)) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: `scenario "${val.id}": kind:"payment" requires both item and merchantRef` });
@@ -151,13 +163,10 @@ export const kitManifestSchema = z.object({
     /**
      * "self" (default): POST /programs/:slug/self-enrol — caller controls
      * privyUserId (needed so run-stream.ts can quote/authorize payments as
-     * that actor), but this route has NO on-chain mint path at all (verified
-     * by reading program-enrol.ts — always DB-only, regardless of
-     * DEPLOYER_PRIVATE_KEY/contracts). "chw": POST /programs/:slug/enrol —
-     * DOES mint on-chain when a deployer key + contracts are configured, but
-     * never sets beneficiaryPrivyUserId, so /payments/quote (which requires
-     * resolving a beneficiary BY that field) can never be reached for these
-     * actors. No single existing route provides both — see kit 3's README
+     * that actor), but this route does not mint on-chain. "chw": POST
+     * /programs/:slug/enrol — can mint on-chain when contracts are configured,
+     * but never sets a payment identity, so /payments/quote cannot be reached
+     * for these actors. No single route provides both — see kit 3's README
      * "Known platform limitations". Kit 3 uses "chw" to get genuine on-chain
      * mints; every other kit uses the "self" default for payment-flow testing.
      */
@@ -170,10 +179,10 @@ export const kitManifestSchema = z.object({
   violationScript: z.array(kitScenarioTemplateSchema).min(1),
   /**
    * Kit 4 only — the rule proposed after the initial stream reveals
-   * undetected violations. Applied via the REAL POST /proposals ->
-   * /proposals/:id/approve flow (backend/src/api/proposals.ts), never
-   * seeded upfront — that would defeat the "policy is deliberately loose"
-   * point of the kit. See kit README "The rerun-after-tighten loop".
+   * undetected violations. Applied via POST /proposals and
+   * POST /proposals/:id/approve, never seeded upfront. That would defeat the
+   * "policy is deliberately loose" point of the kit. See kit README
+   * "The rerun-after-tighten loop".
    */
   tightenedRule: z.object({
     rationale: z.string().min(1),

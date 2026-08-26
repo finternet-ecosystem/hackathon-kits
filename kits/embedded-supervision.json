@@ -1,7 +1,7 @@
 {
   "kitId": "embedded-supervision",
   "title": "Embedded Supervision",
-  "track": "Track 5",
+  "track": "Embedded Supervision",
   "description": "A real on-chain nutrition-style program (Polygon Amoy \u2014 or a local Hardhat node if Amoy is unreachable, see README). Seeds a treasury deposit and mints+activates REAL on-chain vouchers for 2 beneficiaries (b1, b2, enrolMode:\"chw\") so a supervisory agent has genuine VoucherMinted / VoucherActivated on-chain events to tail with watch-chain.ts and reconcile. A separate pair of self-enrolled beneficiaries (b3, b4) exercises the standard notional payment-flow stream (same mechanism as the other three kits) for run-stream.ts's compliant/violation demonstration \u2014 see README 'Known platform limitations' for why chw-enrolled and payment-flow-testable are two non-overlapping enrollment paths on this platform today.",
   "program": {
     "slugPrefix": "embedded-supervision",
@@ -162,7 +162,8 @@
       },
       "count": 2,
       "simHourOfWeek": 58,
-      "expectAllowed": false
+      "expectAllowed": false,
+      "expectedReasonContains": "merchant.id"
     }
   ]
 }

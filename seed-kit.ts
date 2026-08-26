@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 /**
- * Vouch CDIR hackathon: seed-kit.ts
+ * Vouch hackathon: seed-kit.ts
  *
  * Seeds a hackathon org into a ready-to-supervise world for one track:
  * program + policy + merchants + actors + hooks. All mutations use the
@@ -54,7 +54,7 @@ function parseArgs(argv: string[]): CliArgs {
 
 function printHelp(): void {
   console.log(`
-seed-kit.ts - seed a CDIR hackathon sandbox kit into a hackathon org
+seed-kit.ts - seed a Vouch hackathon sandbox kit into a hackathon org
 
 Usage:
   npx tsx seed-kit.ts --kit=<id> [--api-key=<key>] [--base-url=<url>]

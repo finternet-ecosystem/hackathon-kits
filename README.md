@@ -1,18 +1,33 @@
-<p align="center">
-  <a href="https://vouch.finance">
-    <img src="docs/vouch.svg" alt="Vouch" width="64" />
-  </a>
-</p>
+<div align="center">
 
-<h1 align="center">Vouch CDIR Hackathon Kits</h1>
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://networksforhumanity.org/">
+        <img src="./docs/nfh.svg" alt="Networks for Humanity" height="32" />
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://vouch.finance/">
+        <img src="./docs/vouch.svg" alt="Vouch" height="32" />
+      </a>
+    </td>
+  </tr>
+</table>
 
-<p align="center">
+<h1>Vouch Hackathon Kits</h1>
+
+<p>
   <a href="https://cdir-portal.vouch.finance">Developer Portal</a>
   ·
-  <a href="https://vouch.finance">vouch.finance</a>
+  <a href="https://vouch.finance/">vouch.finance</a>
+  ·
+  <a href="https://networksforhumanity.org/">networksforhumanity.org</a>
 </p>
 
-Each kit provisions a real Vouch program (policy, merchants, actors, Hooks) and replays a scripted transaction stream against a live backend. Every allow and deny is a genuine rule-engine decision.
+</div>
+
+Four self-contained sandbox kits for building supervisory agents on [Vouch](https://vouch.finance/). Each kit provisions a real program (policy, merchants, actors, Hooks) and replays a scripted transaction stream against a live backend.
 
 This repo is a **pure HTTP client**. It needs only Node, your test-mode hackathon API key, and network access to the API. No database, Redis, or cluster credentials.
 
@@ -20,12 +35,20 @@ This repo is a **pure HTTP client**. It needs only Node, your test-mode hackatho
 
 ## Quickstart
 
-1. In the [Developer Portal](https://cdir-portal.vouch.finance) open **Hackathon** and click **Enable Hackathon API**. Copy the `sk_test_…` key (shown once).
-2. Clone this repo, then:
+1. In the [Developer Portal](https://cdir-portal.vouch.finance), open [**Hackathon**](https://cdir-portal.vouch.finance/hackathon) and, under **Enable Hackathon API**, click **Create hackathon key**. Copy the `sk_test_…` key (shown once).
+2. Clone [this repo](https://github.com/finternet-ecosystem/hackathon-kits) and check out the `feat/generalise-kits` branch (not yet on `main`):
+
+```bash
+git clone https://github.com/finternet-ecosystem/hackathon-kits.git
+cd hackathon-kits
+git checkout feat/generalise-kits
+```
+
+Then:
 
 ```bash
 cp .env.example .env
-# Edit .env: paste HACKATHON_ORG_API_KEY; keep API_BASE_URL for CDIR
+# Edit .env: paste HACKATHON_ORG_API_KEY; set API_BASE_URL from organizers
 #   API_BASE_URL=https://cdir.vouch.finance/api/v1
 # Local backend: API_BASE_URL=http://localhost:9393/api/v1
 
@@ -38,6 +61,16 @@ npx tsx run-stream.ts --kit=agent-mandate --speed=60
 
 `seed-kit.ts` is idempotent. Re-running against an already-seeded org reprints the summary and creates nothing new.
 
+Want a measurable score instead of just watching the allow/deny stream? Point [**Arena**](arena/README.md) at the same org:
+
+```bash
+cd arena && npm install
+npx tsx src/engine.ts --scenario=scenarios/track3-week.yaml --org=<orgId> --api-key=$HACKATHON_ORG_API_KEY --speed=60
+npx tsx src/scorer.ts --run-id=<runId> --out=report.md
+```
+
+This is steps 4–5 of the full flow (enable → seed → run → **Arena** → **score**): Arena replays a scripted mix of compliant and malicious "personas" against your seeded org, and `scorer.ts` grades a supervisory agent's flagged detections against ground truth (precision / recall / latency-to-detection). See [`arena/README.md`](arena/README.md) for the flags API and full details. Today only Kit 1 (`agent-mandate`) has a scenario.
+
 ---
 
 ## Prerequisites
@@ -46,7 +79,7 @@ npx tsx run-stream.ts --kit=agent-mandate --speed=60
 |------|--------|
 | **Node.js 24+** and `npm` | See `package.json` `engines` |
 | **Hackathon org API key** | Portal → **Enable Hackathon API**. Test-mode key on a **dedicated** hackathon org (not your normal portal org). Kits call `GET /hackathon/orgs/self` and refuse non-hackathon orgs. |
-| **API base URL** | Shared: `https://cdir.vouch.finance/api/v1`. Local: `http://localhost:9393/api/v1`. |
+| **API base URL** | Shared sandbox: `https://cdir.vouch.finance/api/v1`. Local: `http://localhost:9393/api/v1`. |
 
 Organizer batch mint (`POST /hackathon/orgs` + admin key) exists for event ops only. Participants should use self-serve Enable.
 
@@ -63,7 +96,7 @@ Flags `--api-key=` and `--base-url=` override env on any command.
 
 ## Kits
 
-| Kit id | Track | What it demonstrates |
+| Kit id | Scenario | What it demonstrates |
 |--------|-------|----------------------|
 | [`agent-mandate`](kits/agent-mandate/README.md) | Agent Spending Mandate | Parent + sub-agent mandates; per-tx cap, merchant/category allowlists, hours, velocity, delegation overspend |
 | [`kya-licence`](kits/kya-licence/README.md) | KY-A Licence | Mandate lifecycle: revoke, post-revoke reuse, delegation-depth abuse, ledger re-verify |
@@ -275,7 +308,8 @@ Honest platform behavior these kits run into:
 | **Kit 3 chain ops** | Real on-chain mint needs contracts configured on the shared backend. Without them, CHW enrol falls back to off-chain enrollment. CHW-enrolled actors cannot run `/payments/quote`. The kit splits actors: mint vs payment stream. |
 | **watch-chain flags** | Pass `--factory` and `--treasury` explicitly. `--kit`/`--org` do not yet hydrate addresses from the sidecar. |
 | **Phone format** | Self-enrol accepts a narrow phone shape; synthetics use `9999…` numbers. |
-| **Second key for Kit 4** | Self-serve Enable mints one `program_manager` key. Approve needs `team_admin` (or org admin). Ask organizers to mint a second key with `mintKey` / `keyRole`, or use two portal users. |
+| **Second actor for Kit 4 approve** | Approving a proposal needs a different actor than the one who proposed it — your `program_manager` API key can propose but can't approve its own proposal. You don't need a second key or organizer help: **Enable Hackathon API** also makes you an `org_owner` member of the org, so approve using your portal session token instead of your API key. See [Kit 4's README](kits/disbursement-integrity/README.md#rerun-after-tighten). |
+| **Arena** | The eval harness referenced in some hackathon materials ("point Arena at the org") lives in this repo at [`arena/`](arena/README.md) — see the Quickstart above for steps 4–5. Only the `agent-mandate` (Kit 1) scenario is shipped today; the `llm-adversary` persona and the `scorer.ts --baseline` comparison mode are unfinished (see `arena/README.md` "Known limitations"). |
 
 Per-kit READMEs expand on track-specific caveats.
 
@@ -317,8 +351,10 @@ Manifest fields stay close to API bodies: `program`, `policy`, `merchants`, `act
 ```
 .
 ├── seed-kit.ts / run-stream.ts / watch-chain.ts
+├── docs/                 # vouch.svg, nfh.svg
 ├── kits/                 # manifests + per-kit READMEs
 ├── lib/                  # client, org-guard, expand, state, labels, …
+├── arena/                # scoring harness: personas, scorer, flags API — see arena/README.md
 ├── __tests__/
 ├── .env.example
 ├── package.json
