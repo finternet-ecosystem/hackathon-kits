@@ -61,6 +61,16 @@ npx tsx run-stream.ts --kit=agent-mandate --speed=60
 
 `seed-kit.ts` is idempotent. Re-running against an already-seeded org reprints the summary and creates nothing new.
 
+Want a measurable score instead of just watching the allow/deny stream? Point [**Arena**](arena/README.md) at the same org:
+
+```bash
+cd arena && npm install
+npx tsx src/engine.ts --scenario=scenarios/track3-week.yaml --org=<orgId> --api-key=$HACKATHON_ORG_API_KEY --speed=60
+npx tsx src/scorer.ts --run-id=<runId> --out=report.md
+```
+
+This is steps 4–5 of the full flow (enable → seed → run → **Arena** → **score**): Arena replays a scripted mix of compliant and malicious "personas" against your seeded org, and `scorer.ts` grades a supervisory agent's flagged detections against ground truth (precision / recall / latency-to-detection). See [`arena/README.md`](arena/README.md) for the flags API and full details. Today only Kit 1 (`agent-mandate`) has a scenario.
+
 ---
 
 ## Prerequisites
@@ -299,7 +309,7 @@ Honest platform behavior these kits run into:
 | **watch-chain flags** | Pass `--factory` and `--treasury` explicitly. `--kit`/`--org` do not yet hydrate addresses from the sidecar. |
 | **Phone format** | Self-enrol accepts a narrow phone shape; synthetics use `9999…` numbers. |
 | **Second actor for Kit 4 approve** | Approving a proposal needs a different actor than the one who proposed it — your `program_manager` API key can propose but can't approve its own proposal. You don't need a second key or organizer help: **Enable Hackathon API** also makes you an `org_owner` member of the org, so approve using your portal session token instead of your API key. See [Kit 4's README](kits/disbursement-integrity/README.md#rerun-after-tighten). |
-| **Arena** | The eval harness referenced in some hackathon materials ("point Arena at the org") is an internal, unreleased CLI tool — it is not published in this repo, the portal, or any live URL. If you were told to use it, ask organizers whether it's actually available yet before hunting for it. |
+| **Arena** | The eval harness referenced in some hackathon materials ("point Arena at the org") lives in this repo at [`arena/`](arena/README.md) — see the Quickstart above for steps 4–5. Only the `agent-mandate` (Kit 1) scenario is shipped today; the `llm-adversary` persona and the `scorer.ts --baseline` comparison mode are unfinished (see `arena/README.md` "Known limitations"). |
 
 Per-kit READMEs expand on track-specific caveats.
 
@@ -344,6 +354,7 @@ Manifest fields stay close to API bodies: `program`, `policy`, `merchants`, `act
 ├── docs/                 # vouch.svg, nfh.svg
 ├── kits/                 # manifests + per-kit READMEs
 ├── lib/                  # client, org-guard, expand, state, labels, …
+├── arena/                # scoring harness: personas, scorer, flags API — see arena/README.md
 ├── __tests__/
 ├── .env.example
 ├── package.json
