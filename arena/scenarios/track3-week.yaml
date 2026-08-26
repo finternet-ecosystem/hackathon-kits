@@ -1,0 +1,145 @@
+# Track 3 (Agent Spending Mandate) reference scenario. Targets an org that
+# has already been seeded with Kit 1 (agent-mandate) via, from the repo
+# root:
+#   npx tsx seed-kit.ts --kit=agent-mandate --org=<orgId> --api-key=<key>
+#
+# `actors`/`merchants`/`categories` below mirror the repo root's
+# `kits/agent-mandate.json` exactly (refs, budgets, categories,
+# merchant->category map) — this is PUBLIC/committed data, not a secret, so
+# shipping a copy here does not create any credential coupling; only the
+# derived privyUserId/program-slug FORMULA (lib/identity.ts) is
+# load-bearing, and that's covered by its own doc comment + tests.
+#
+# Run (one-shot, compressed to a few minutes of wall clock):
+#   npx tsx src/engine.ts --scenario=scenarios/track3-week.yaml --org=<orgId> --key=<apiKey> --speed=60
+#
+# Run (continuous drip, paced <=20/min/org, until Ctrl-C or --duration=):
+#   npx tsx src/engine.ts --scenario=scenarios/track3-week.yaml --org=<orgId> --key=<apiKey> --mode=continuous --duration=1h
+
+scenarioId: track3-week
+kit: agent-mandate
+slugPrefix: agent-mandate
+duration: 1w
+simTimeSpeed: 60
+
+categories:
+  - OFFICE
+  - LOGISTICS
+  - SOFTWARE
+  - TRAVEL
+
+actors:
+  - ref: parent
+    budget: 100000
+    allowedCategories: [OFFICE, LOGISTICS, SOFTWARE, TRAVEL]
+  - ref: child-1
+    budget: 20000
+    allowedCategories: [OFFICE, LOGISTICS, SOFTWARE, TRAVEL]
+  - ref: child-2
+    budget: 20000
+    allowedCategories: [OFFICE, LOGISTICS, SOFTWARE, TRAVEL]
+  - ref: child-3
+    budget: 20000
+    allowedCategories: [OFFICE, LOGISTICS, SOFTWARE, TRAVEL]
+  - ref: child-4-restricted
+    budget: 5000
+    allowedCategories: [OFFICE, LOGISTICS, SOFTWARE, TRAVEL]
+
+merchants:
+  - ref: m1
+    name: Acme Office Supplies
+    approvedCategories: [OFFICE]
+  - ref: m2
+    name: Beacon Logistics Co
+    approvedCategories: [LOGISTICS]
+  - ref: m3
+    name: CloudStack Software
+    approvedCategories: [SOFTWARE]
+  - ref: m4
+    name: Delta Travel Agency
+    approvedCategories: [TRAVEL]
+  - ref: m5
+    name: Echo Print & Copy
+    approvedCategories: [OFFICE]
+  - ref: m6
+    name: Foxtrot Facilities
+    approvedCategories: [LOGISTICS]
+  - ref: m7
+    name: Global Parts Supply
+    approvedCategories: [LOGISTICS]
+  - ref: m8
+    name: Horizon Consulting
+    approvedCategories: [SOFTWARE]
+  - ref: m9
+    name: Ion Hardware
+    approvedCategories: [OFFICE]
+  - ref: m10
+    name: Juniper IT Services
+    approvedCategories: [SOFTWARE]
+  - ref: m11
+    name: Krypton Courier (unapproved)
+    approvedCategories: [LOGISTICS]
+  - ref: m12
+    name: Lighthouse Catering (unapproved)
+    approvedCategories: [TRAVEL]
+
+# 73 transaction instances total across 7 personas — comfortably completes
+# in well under 10 minutes wall-clock at simTimeSpeed=60 (see
+# arena/README.md "Verified acceptance run" for a real measured time).
+personas:
+  - type: compliant-shopper
+    count: 30
+    params:
+      minAmount: 100
+      maxAmount: 1800
+      intervalSeconds: 180
+
+  - type: limit-prober
+    count: 8
+    params:
+      actorRef: parent
+      merchantRef: m1
+      capUsd: 2000
+      lowBound: 1000
+      highBound: 4000
+      intervalSeconds: 20
+
+  - type: structurer
+    count: 5
+    params:
+      actorRef: child-1
+      merchantRef: m3
+      totalUsd: 6000
+      capUsd: 2000
+      intervalSeconds: 90
+
+  - type: category-drifter
+    count: 10
+    params:
+      actorRef: child-2
+      driftStartFraction: 0.5
+      intervalSeconds: 60
+
+  - type: night-burster
+    count: 6
+    params:
+      actorRef: child-3
+      nightHour: 2
+      dayOfWeek: 5
+      intervalSeconds: 30
+
+  - type: delegation-abuser
+    count: 8
+    params:
+      actorRef: child-4-restricted
+      preExhaustionCount: 3
+      intervalSeconds: 40
+
+  - type: colluder-ring
+    count: 6
+    params:
+      actorRefs: [parent, child-1, child-2, child-3, child-4-restricted]
+      merchantRef: m11
+      nightHour: 3
+      dayOfWeek: 6
+      intervalSeconds: 15
