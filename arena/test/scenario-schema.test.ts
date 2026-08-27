@@ -37,10 +37,10 @@ describe("scenario-schema", () => {
     assert.throws(() => parseScenario(bad, "inline"), /Invalid scenario/);
   });
 
-  it("loads and validates the shipped track3-week.yaml scenario", () => {
-    const p = path.join(__dirname, "..", "scenarios", "track3-week.yaml");
+  it("loads and validates the shipped agent-mandate-week.yaml scenario", () => {
+    const p = path.join(__dirname, "..", "scenarios", "agent-mandate-week.yaml");
     const scenario = loadScenarioFile(p);
-    assert.equal(scenario.scenarioId, "track3-week");
+    assert.equal(scenario.scenarioId, "agent-mandate-week");
     assert.equal(scenario.kit, "agent-mandate");
     assert.equal(scenario.actors.length, 5);
     assert.equal(scenario.merchants.length, 12);

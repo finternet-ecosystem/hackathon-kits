@@ -29,3 +29,31 @@ jobs:
 
       # Unit tests only; the integration suite skips itself without a live backend.
       - run: npm test
+
+  # arena/ is a separate package with its own lockfile, tsconfig and scripts,
+  # and is excluded from the root tsconfig, so it needs its own leg.
+  arena:
+    name: Arena Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: arena
+    strategy:
+      fail-fast: false
+      matrix:
+        # Lowest entry must match engines.node in arena/package.json.
+        node-version: ["20.x", "22.x", "24.x"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: arena/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test

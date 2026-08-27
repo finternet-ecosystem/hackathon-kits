@@ -27,7 +27,7 @@ npm install
 
 # 3. Run the reference scenario against it, compressed to a few minutes:
 npx tsx src/engine.ts \
-  --scenario=scenarios/track3-week.yaml \
+  --scenario=scenarios/agent-mandate-week.yaml \
   --org=<orgId> \
   --api-key=<key> \
   --speed=60
@@ -70,7 +70,7 @@ src/
   flags-api.ts        HTTP endpoint teams POST detections to
   scorer.ts           precision/recall/latency-to-detection report
 scenarios/
-  track3-week.yaml    reference scenario for Kit 1 (Agent Spending Mandate)
+  agent-mandate-week.yaml  reference scenario for Kit 1 (Agent Spending Mandate)
 test/                 node:test unit tests
 ```
 
@@ -144,7 +144,7 @@ interchangeable for `scorer.ts`.
   intents/quotes/authorizations against actors and merchants that already
   exist, so the stream exercises the real authorization path rather than
   writing ground truth directly.
-- **Only `scenarios/track3-week.yaml` (Kit 1 / Agent Spending Mandate)
+- **Only `scenarios/agent-mandate-week.yaml` (Kit 1 / Agent Spending Mandate)
   ships today.** The scenario schema and all 7 personas are kit-agnostic —
   adding a scenario for `kya-licence`, `embedded-supervision`, or
   `disbursement-integrity` is a new YAML file, not new code — but only Kit

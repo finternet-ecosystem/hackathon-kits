@@ -7,7 +7,7 @@ import type { Scenario } from "../src/scenario-schema";
 describe("engine — parseArgs", () => {
   it("parses required + optional flags", () => {
     const args = parseArgs([
-      "--scenario=scenarios/track3-week.yaml",
+      "--scenario=scenarios/agent-mandate-week.yaml",
       "--org=org123",
       "--api-key=sk_test_abc",
       "--speed=30",
@@ -15,7 +15,7 @@ describe("engine — parseArgs", () => {
       "--mode=continuous",
       "--duration=10m",
     ]);
-    assert.equal(args.scenario, "scenarios/track3-week.yaml");
+    assert.equal(args.scenario, "scenarios/agent-mandate-week.yaml");
     assert.equal(args.org, "org123");
     assert.equal(args.apiKey, "sk_test_abc");
     assert.equal(args.speed, 30);

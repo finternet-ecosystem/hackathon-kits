@@ -22,9 +22,9 @@
  *     "Modes".
  *
  * Usage:
- *   npx tsx src/engine.ts --scenario=scenarios/track3-week.yaml --org=<orgId> --key=<apiKey>
- *   npx tsx src/engine.ts --scenario=scenarios/track3-week.yaml --org=<orgId> --key=<apiKey> --speed=60 --run-id=smoke-1
- *   npx tsx src/engine.ts --scenario=scenarios/track3-week.yaml --org=<orgId> --key=<apiKey> --mode=continuous --duration=90s
+ *   npx tsx src/engine.ts --scenario=scenarios/agent-mandate-week.yaml --org=<orgId> --key=<apiKey>
+ *   npx tsx src/engine.ts --scenario=scenarios/agent-mandate-week.yaml --org=<orgId> --key=<apiKey> --speed=60 --run-id=smoke-1
+ *   npx tsx src/engine.ts --scenario=scenarios/agent-mandate-week.yaml --org=<orgId> --key=<apiKey> --mode=continuous --duration=90s
  *   npx tsx src/engine.ts --help
  */
 import path from "node:path";
@@ -77,7 +77,7 @@ engine.ts — Vouch hackathon arena scheduler
 Usage:
   npx tsx src/engine.ts --scenario=<path> --org=<orgId> --api-key=<key> [options]
 
-  --scenario=<path>   Required. Path to a scenario YAML (see scenarios/track3-week.yaml).
+  --scenario=<path>   Required. Path to a scenario YAML (see scenarios/agent-mandate-week.yaml).
   --org=<orgId>        Required. Must be a hackathon org (POST /hackathon/orgs) already seeded with the scenario's kit.
   --api-key=<key>      Required (or --key=, or $ARENA_API_KEY). The org's API key.
   --base-url=<url>     Default: $API_BASE_URL or http://localhost:9393/api/v1

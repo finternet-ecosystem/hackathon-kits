@@ -64,7 +64,7 @@ Want a measurable score instead of just watching the allow/deny stream? Point [*
 
 ```bash
 cd arena && npm install
-npx tsx src/engine.ts --scenario=scenarios/track3-week.yaml --org=<orgId> --api-key=$HACKATHON_ORG_API_KEY --speed=60
+npx tsx src/engine.ts --scenario=scenarios/agent-mandate-week.yaml --org=<orgId> --api-key=$HACKATHON_ORG_API_KEY --speed=60
 npx tsx src/scorer.ts --run-id=<runId> --out=report.md
 ```
 

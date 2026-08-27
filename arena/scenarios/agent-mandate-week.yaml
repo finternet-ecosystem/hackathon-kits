@@ -11,12 +11,12 @@
 # load-bearing, and that's covered by its own doc comment + tests.
 #
 # Run (one-shot, compressed to a few minutes of wall clock):
-#   npx tsx src/engine.ts --scenario=scenarios/track3-week.yaml --org=<orgId> --key=<apiKey> --speed=60
+#   npx tsx src/engine.ts --scenario=scenarios/agent-mandate-week.yaml --org=<orgId> --key=<apiKey> --speed=60
 #
 # Run (continuous drip, paced <=20/min/org, until Ctrl-C or --duration=):
-#   npx tsx src/engine.ts --scenario=scenarios/track3-week.yaml --org=<orgId> --key=<apiKey> --mode=continuous --duration=1h
+#   npx tsx src/engine.ts --scenario=scenarios/agent-mandate-week.yaml --org=<orgId> --key=<apiKey> --mode=continuous --duration=1h
 
-scenarioId: track3-week
+scenarioId: agent-mandate-week
 kit: agent-mandate
 slugPrefix: agent-mandate
 duration: 1w

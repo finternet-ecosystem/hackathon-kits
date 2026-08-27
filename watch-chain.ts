@@ -128,9 +128,9 @@ async function resolveAddresses(args: CliArgs): Promise<{ factoryAddress: string
   return { factoryAddress, treasuryAddress };
 }
 
-// Minimal ABIs — event signatures only, enough to tail and decode. Copied
-// verbatim from contracts/interfaces/IPoshanVoucherFactory.sol and
-// contracts/PoshanTreasury.sol (checked against source, not guessed).
+// Minimal ABIs — event signatures only, enough to tail and decode. Transcribed
+// from the deployed Factory and Treasury contract ABIs and checked against
+// them, not guessed.
 const FACTORY_EVENTS_ABI = [
   "event VoucherMinted(uint256 indexed tokenId, bytes32 indexed beneficiaryHash, uint8 tier, uint256 value, uint256 expiry)",
   "event VoucherActivated(uint256 indexed tokenId, bytes32 phoneHash, uint8 tier, uint256 value, uint256 expiry, uint256 timestamp)",
