@@ -118,10 +118,24 @@ export async function resolveTarget(client: ArenaApiClient, scenario: Scenario, 
   const programRes = await client.get<{ program: { id: string } }>(`/programs/${programSlug}`);
   const programId = programRes.program.id;
 
+  // NOTE: verified against the live sandbox that `?programId=` is NOT applied
+  // server-side — this call returns every merchant ever created for the org
+  // (across every past seed-kit.ts run), not just this program's, identical
+  // even when passed a bogus programId. On a hackathon org that's been
+  // reseeded before (the normal case — orgs get reused across many runs),
+  // multiple merchants share the same name across different program
+  // generations. The response is consistently ordered newest-first, so take
+  // the FIRST match per name rather than the last — that's this program's
+  // freshly-seeded merchant, not a stale one from an earlier seeding. This
+  // is a workaround for a platform bug, not a proper fix; report it to the
+  // platform team if it's still happening.
   const merchantsRes = await client.get<{ merchants: Array<{ id: string; name: string }> }>(
     `/merchants?programId=${encodeURIComponent(programId)}`,
   );
-  const byName = new Map(merchantsRes.merchants.map((m) => [m.name, m.id]));
+  const byName = new Map<string, string>();
+  for (const m of merchantsRes.merchants) {
+    if (!byName.has(m.name)) byName.set(m.name, m.id);
+  }
 
   const resolvedMerchants = scenario.merchants.map((m) => {
     const id = byName.get(m.name);
