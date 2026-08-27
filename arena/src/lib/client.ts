@@ -52,15 +52,29 @@ export class ArenaApiClient {
     const url = `${this.opts.baseUrl.replace(/\/$/, "")}${path}`;
     let attempt = 0;
     for (;;) {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": this.opts.apiKey,
-          ...extraHeaders,
-        },
-        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-      });
+      let res: Response;
+      try {
+        res = await fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": this.opts.apiKey,
+            ...extraHeaders,
+          },
+          ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+        });
+      } catch (err) {
+        // A thrown fetch (DNS blip, connection reset, timeout — no HTTP response at
+        // all) is the same class of transient live-network flakiness as a 5xx, so
+        // it gets the same retry treatment rather than crashing the whole run.
+        if (attempt < MAX_5XX_RETRIES) {
+          console.warn(`  [retry] ${method} ${path} -> ${(err as Error).message}, retrying (attempt ${attempt + 2}/${MAX_5XX_RETRIES + 1})...`);
+          await sleep(RETRY_BACKOFF_MS[attempt] ?? 1000);
+          attempt += 1;
+          continue;
+        }
+        throw err;
+      }
       const text = await res.text();
       let parsed: unknown = null;
       if (text) {

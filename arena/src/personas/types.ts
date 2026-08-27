@@ -26,6 +26,17 @@ export interface MerchantInfo {
   id: string;
   name: string;
   approvedCategories: string[];
+  /**
+   * Whether this merchant is on the kit's counterparty allowlist (the
+   * hook's `merchant.id in [...]` check), NOT just whether it deals in an
+   * approved category. A scenario can (deliberately) include merchants
+   * that match `approvedCategories` but are still an unapproved
+   * counterparty — used to test the unapproved-counterparty violation.
+   * Defaults to true when the scenario YAML omits the field, so personas
+   * that pick an "in-policy" merchant by category alone don't accidentally
+   * land on one of these. `undefined`/missing is NOT the same as `false`.
+   */
+  approvedCounterparty: boolean;
 }
 
 export interface PersonaItem {

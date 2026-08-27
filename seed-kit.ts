@@ -17,7 +17,8 @@
  *   --api-key=<key>   Required (or HACKATHON_ORG_API_KEY). Org resolved via GET /hackathon/orgs/self.
  *   --base-url=<url>  Default: $API_BASE_URL or http://localhost:9393/api/v1
  *
- * Idempotent. No program-reset flag; use a fresh hackathon org for a clean world.
+ * Idempotent. Pass --fresh (or --fresh=<label>) to seed a new, isolated
+ * program instead of reusing the existing one for this org+kit.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -25,7 +26,7 @@ import { assertHackathonOrg } from "./lib/org-guard";
 import { KitApiClient, KitApiError } from "./lib/client";
 import { parseManifest, type KitManifest } from "./lib/manifest-types";
 import { resolveMerchantRefs } from "./lib/resolve-refs";
-import { actorPrivyUserId, programSlugFor } from "./lib/synthetic";
+import { actorPrivyUserId, programSlugFor, freshSlugPrefix } from "./lib/synthetic";
 import { writeKitState, readKitState, type KitState, type SeededActor, type SeededMerchant } from "./lib/state";
 
 const KITS_DIR = path.join(__dirname, "kits");
@@ -36,6 +37,7 @@ export interface CliArgs {
   apiKey: string;
   baseUrl: string;
   help: boolean;
+  freshLabel?: string;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -44,11 +46,14 @@ function parseArgs(argv: string[]): CliArgs {
     const hit = argv.find((a) => a.startsWith(prefix));
     return hit ? hit.slice(prefix.length) : undefined;
   };
+  const freshValue = get("fresh");
+  const freshLabel = freshValue ? freshValue : argv.includes("--fresh") ? Date.now().toString(36) : undefined;
   return {
     kit: get("kit") ?? "",
     apiKey: get("api-key") ?? process.env.HACKATHON_ORG_API_KEY ?? "",
     baseUrl: get("base-url") ?? process.env.API_BASE_URL ?? "http://localhost:9393/api/v1",
     help: argv.includes("--help") || argv.includes("-h"),
+    freshLabel,
   };
 }
 
@@ -66,6 +71,10 @@ Kits: ${KIT_IDS.join(", ")}
                     GET /hackathon/orgs/self. Key from portal Enable Hackathon API
                     (or organizer mint). Non-hackathon orgs are refused.
   --base-url=<url>  Default: $API_BASE_URL or http://localhost:9393/api/v1
+  --fresh[=<label>] Seed a new, isolated program instead of reusing the
+                    existing one for this org+kit. Auto-generates a label
+                    if none is given. Pass the same label to Arena's
+                    engine.ts via --fresh-label=<label> to target it.
   --help            Show this help.
 `);
 }
@@ -109,7 +118,10 @@ async function seedKit(args: CliArgs): Promise<void> {
   const org = await assertHackathonOrg(client);
   console.log(`Seeding kit "${manifest.kitId}" (${manifest.title}) for hackathon org "${org.name}" (${org.id})`);
 
-  const programSlug = programSlugFor(manifest.program.slugPrefix, org.id);
+  const effectiveSlugPrefix = args.freshLabel
+    ? freshSlugPrefix(manifest.program.slugPrefix, args.freshLabel)
+    : manifest.program.slugPrefix;
+  const programSlug = programSlugFor(effectiveSlugPrefix, org.id);
 
   const existing = await findExistingProgram(client, programSlug);
   if (existing) {
@@ -123,9 +135,17 @@ async function seedKit(args: CliArgs): Promise<void> {
   }
 
   // ── 1. Program ────────────────────────────────────────────────────────
+  // Program `name` has its own uniqueness constraint on the platform,
+  // independent of `slug` — verified live: a second POST /programs with a
+  // fresh slug but the same name 409s ("Program with name ... already
+  // exists"). Fold the label into the name too when --fresh is used, or a
+  // second fresh program under the same kit+org collides on name alone.
+  const programName = args.freshLabel
+    ? `${manifest.program.name} (${org.name}, ${args.freshLabel})`
+    : `${manifest.program.name} (${org.name})`;
   const programRes = await client.post<{ program: { id: string } }>("/programs", {
     slug: programSlug,
-    name: `${manifest.program.name} (${org.name})`,
+    name: programName,
     currency: manifest.program.currency,
     currencySymbol: manifest.program.currencySymbol,
     balanceModel: manifest.program.balanceModel,
@@ -284,6 +304,9 @@ async function seedKit(args: CliArgs): Promise<void> {
   console.log(`  merchants: ${merchants.length}`);
   console.log(`  actors:    ${actors.length}`);
   console.log(`  hooks:     ${hooks.length}`);
+  if (args.freshLabel) {
+    console.log(`Fresh program: ${programSlug} — pass --fresh-label=${args.freshLabel} to Arena's engine.ts to target this same program.`);
+  }
   console.log(`\nNext: npx tsx run-stream.ts --kit=${manifest.kitId} --api-key=<key>`);
 }
 

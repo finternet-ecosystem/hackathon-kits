@@ -36,7 +36,9 @@ export const categoryDrifter: Persona = {
     // Categories with at least one approving merchant IN THIS WORLD — the pre-drift ("clean
     // history") phase must only pick from these, or a category with no covering merchant would
     // force an accidental mismatch even though the persona intends a compliant purchase.
-    const coveredAllowedCategories = allowedCategories.filter((c) => world.merchants.some((m) => m.approvedCategories.includes(c)));
+    const coveredAllowedCategories = allowedCategories.filter((c) =>
+      world.merchants.some((m) => m.approvedCategories.includes(c) && m.approvedCounterparty),
+    );
     const cleanCategoryPool = coveredAllowedCategories.length > 0 ? coveredAllowedCategories : allowedCategories;
 
     const actions: PersonaAction[] = [];
@@ -56,8 +58,9 @@ export const categoryDrifter: Persona = {
         merchant = mismatched.length > 0 ? pick(rng, mismatched) : pick(rng, world.merchants);
       } else {
         category = pick(rng, cleanCategoryPool);
-        const eligible = world.merchants.filter((m) => m.approvedCategories.includes(category));
-        merchant = eligible.length > 0 ? pick(rng, eligible) : pick(rng, world.merchants);
+        const eligible = world.merchants.filter((m) => m.approvedCategories.includes(category) && m.approvedCounterparty);
+        const approvedMerchants = world.merchants.filter((m) => m.approvedCounterparty);
+        merchant = eligible.length > 0 ? pick(rng, eligible) : pick(rng, approvedMerchants.length > 0 ? approvedMerchants : world.merchants);
       }
 
       const actuallyMismatched = !merchant.approvedCategories.includes(category);

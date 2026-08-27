@@ -58,7 +58,7 @@ describe("engine — resolveTarget", () => {
     simTimeSpeed: 60,
     categories: ["OFFICE"],
     actors: [{ ref: "parent", budget: 1000, allowedCategories: ["OFFICE"] }],
-    merchants: [{ ref: "m1", name: "Acme Office Supplies", approvedCategories: ["OFFICE"] }],
+    merchants: [{ ref: "m1", name: "Acme Office Supplies", approvedCategories: ["OFFICE"], approvedCounterparty: true }],
     personas: [{ type: "compliant-shopper", count: 1, params: {} }],
   };
 
@@ -72,6 +72,9 @@ describe("engine — resolveTarget", () => {
     globalThis.fetch = (async (url: string | URL) => {
       const u = String(url);
       calls.push(u);
+      if (u.includes("/hooks")) {
+        return new Response(JSON.stringify({ hooks: [] }), { status: 200 });
+      }
       if (u.includes("/programs/agent-mandate-")) {
         return new Response(JSON.stringify({ program: { id: "prog-real-id" } }), { status: 200 });
       }
@@ -91,9 +94,79 @@ describe("engine — resolveTarget", () => {
     assert.ok(calls.some((c) => c.includes("/programs/agent-mandate-12345678")));
   });
 
+  it("prefers the hook-approved merchant id over a same-named stale duplicate from an earlier seeding", async () => {
+    // Reproduces the live-sandbox bug: GET /merchants?programId= ignores the
+    // filter and returns merchants from every past seed-kit.ts run on a
+    // reused org, so a name can resolve to multiple candidate ids. The
+    // program's own counterparty-gate hook (GET /programs/:slug/hooks) names
+    // the REAL id it enforces — that must win over a stale duplicate, even
+    // one listed first in the (unfiltered) merchants response.
+    globalThis.fetch = (async (url: string | URL) => {
+      const u = String(url);
+      if (u.includes("/hooks")) {
+        return new Response(
+          JSON.stringify({
+            hooks: [
+              {
+                ruleConfig: JSON.stringify({ all: [{ field: "merchant.id", op: "in", value: ["merch-correct-id"] }] }),
+              },
+            ],
+          }),
+          { status: 200 },
+        );
+      }
+      if (u.includes("/programs/agent-mandate-")) {
+        return new Response(JSON.stringify({ program: { id: "prog-real-id" } }), { status: 200 });
+      }
+      if (u.includes("/merchants?programId=")) {
+        // Stale duplicate listed FIRST — a naive "first/last match wins" would get this wrong.
+        return new Response(
+          JSON.stringify({
+            merchants: [
+              { id: "merch-stale-id", name: "Acme Office Supplies" },
+              { id: "merch-correct-id", name: "Acme Office Supplies" },
+            ],
+          }),
+          { status: 200 },
+        );
+      }
+      throw new Error(`Unexpected fetch: ${u}`);
+    }) as typeof fetch;
+
+    const client = new ArenaApiClient({ baseUrl: "http://localhost:9393/api/v1", apiKey: "k" });
+    const target = await resolveTarget(client, scenario, "org-abcdefgh12345678");
+
+    assert.equal(target.world.merchants[0]!.id, "merch-correct-id");
+  });
+
+  it("targets a fresh-label slug when freshLabel is passed, instead of the plain deterministic slug", async () => {
+    const calls: string[] = [];
+    globalThis.fetch = (async (url: string | URL) => {
+      const u = String(url);
+      calls.push(u);
+      if (u.includes("/hooks")) {
+        return new Response(JSON.stringify({ hooks: [] }), { status: 200 });
+      }
+      if (u.includes("/programs/agent-mandate-resettest1-")) {
+        return new Response(JSON.stringify({ program: { id: "prog-fresh-id" } }), { status: 200 });
+      }
+      if (u.includes("/merchants?programId=")) {
+        return new Response(JSON.stringify({ merchants: [{ id: "merch-fresh-id", name: "Acme Office Supplies" }] }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${u}`);
+    }) as typeof fetch;
+
+    const client = new ArenaApiClient({ baseUrl: "http://localhost:9393/api/v1", apiKey: "k" });
+    const target = await resolveTarget(client, scenario, "org-abcdefgh12345678", "resetTest1");
+
+    assert.equal(target.programSlug, "agent-mandate-resettest1-12345678");
+    assert.ok(calls.some((c) => c.includes("/programs/agent-mandate-resettest1-12345678")));
+  });
+
   it("throws a descriptive error when a scenario merchant isn't found via GET /merchants", async () => {
     globalThis.fetch = (async (url: string | URL) => {
       const u = String(url);
+      if (u.includes("/hooks")) return new Response(JSON.stringify({ hooks: [] }), { status: 200 });
       if (u.includes("/programs/")) return new Response(JSON.stringify({ program: { id: "prog-1" } }), { status: 200 });
       if (u.includes("/merchants?")) return new Response(JSON.stringify({ merchants: [] }), { status: 200 });
       throw new Error(`Unexpected fetch: ${u}`);

@@ -79,9 +79,11 @@ merchants:
   - ref: m11
     name: Krypton Courier (unapproved)
     approvedCategories: [LOGISTICS]
+    approvedCounterparty: false
   - ref: m12
     name: Lighthouse Catering (unapproved)
     approvedCategories: [TRAVEL]
+    approvedCounterparty: false
 
 # 73 transaction instances total across 7 personas — comfortably completes
 # in well under 10 minutes wall-clock at simTimeSpeed=60.

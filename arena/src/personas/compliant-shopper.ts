@@ -61,8 +61,12 @@ export const compliantShopper: Persona = {
       const category = actor.allowedCategories.length > 0
         ? pick(rng, actor.allowedCategories)
         : pick(rng, world.categories.length > 0 ? world.categories : ["GENERAL"]);
-      const eligibleMerchants = world.merchants.filter((m) => m.approvedCategories.includes(category));
-      const merchant = eligibleMerchants.length > 0 ? pick(rng, eligibleMerchants) : pick(rng, world.merchants);
+      const eligibleMerchants = world.merchants.filter((m) => m.approvedCategories.includes(category) && m.approvedCounterparty);
+      const approvedMerchants = world.merchants.filter((m) => m.approvedCounterparty);
+      const merchant =
+        eligibleMerchants.length > 0
+          ? pick(rng, eligibleMerchants)
+          : pick(rng, approvedMerchants.length > 0 ? approvedMerchants : world.merchants);
 
       const amount = Math.round(randInt(rng, minAmount, maxAmount) * 100) / 100;
       // Business hours only (9-17), Mon-Fri-ish spread across the simulated week.

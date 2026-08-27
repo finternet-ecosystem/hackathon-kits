@@ -30,7 +30,7 @@
 import path from "node:path";
 import { loadScenarioFile, type Scenario, type PersonaEntry } from "./scenario-schema";
 import { ArenaApiClient } from "./lib/client";
-import { actorPrivyUserId, programSlugFor } from "./lib/identity";
+import { actorPrivyUserId, programSlugFor, freshSlugPrefix } from "./lib/identity";
 import { simHourToIso } from "./lib/sim-time";
 import { RateLimiter } from "./lib/rate-limiter";
 import { LabelsWriter } from "./labels";
@@ -46,6 +46,7 @@ export interface CliArgs {
   mode: "one-shot" | "continuous";
   duration?: string;
   rateLimitPerMin?: number;
+  freshLabel?: string;
   help: boolean;
 }
 
@@ -66,6 +67,7 @@ function parseArgs(argv: string[]): CliArgs {
     mode,
     duration: get("duration"),
     rateLimitPerMin: get("rate-limit") ? Number(get("rate-limit")) : undefined,
+    freshLabel: get("fresh-label"),
     help: argv.includes("--help") || argv.includes("-h"),
   };
 }
@@ -86,6 +88,7 @@ Usage:
   --mode=<mode>        "one-shot" (default) or "continuous".
   --duration=<dur>     REQUIRED for --mode=continuous (e.g. "90s", "10m", "1h"). Bounds the run — arena never runs unbounded.
   --rate-limit=<n>     Override the self-imposed requests/min cap (default: 300 one-shot, 20 continuous).
+  --fresh-label=<label> Target a program created by seed-kit.ts --fresh=<label> instead of the default deterministic program for this org.
   --help               Show this help.
 
 Known persona types: ${PERSONA_IDS.join(", ")}
@@ -113,39 +116,77 @@ interface ResolvedTarget {
 }
 
 /** Resolves the scenario's declared actors/merchants against the REAL platform (program id + merchant ids) via public API calls only — no DB/file access. */
-export async function resolveTarget(client: ArenaApiClient, scenario: Scenario, orgId: string): Promise<ResolvedTarget> {
-  const programSlug = programSlugFor(scenario.slugPrefix, orgId);
+export async function resolveTarget(
+  client: ArenaApiClient,
+  scenario: Scenario,
+  orgId: string,
+  freshLabel?: string,
+): Promise<ResolvedTarget> {
+  const effectiveSlugPrefix = freshLabel ? freshSlugPrefix(scenario.slugPrefix, freshLabel) : scenario.slugPrefix;
+  const programSlug = programSlugFor(effectiveSlugPrefix, orgId);
   const programRes = await client.get<{ program: { id: string } }>(`/programs/${programSlug}`);
   const programId = programRes.program.id;
 
-  // NOTE: verified against the live sandbox that `?programId=` is NOT applied
-  // server-side — this call returns every merchant ever created for the org
-  // (across every past seed-kit.ts run), not just this program's, identical
-  // even when passed a bogus programId. On a hackathon org that's been
-  // reseeded before (the normal case — orgs get reused across many runs),
-  // multiple merchants share the same name across different program
-  // generations. The response is consistently ordered newest-first, so take
-  // the FIRST match per name rather than the last — that's this program's
-  // freshly-seeded merchant, not a stale one from an earlier seeding. This
-  // is a workaround for a platform bug, not a proper fix; report it to the
-  // platform team if it's still happening.
+  // NOTE: verified against the live sandbox that `?programId=` on GET
+  // /merchants is NOT applied server-side — it returns every merchant ever
+  // created for the org (across every past seed-kit.ts run), identical even
+  // when passed a bogus programId. `&includeGlobal=false` (the endpoint's
+  // own documented scoping flag) doesn't fix this either — it returns ZERO
+  // merchants for the real programId too, so whatever computes "assigned to
+  // this program" server-side for that endpoint is itself broken, not just
+  // the default.
+  //
+  // What IS reliably program-scoped: GET /programs/:slug/hooks (scoped by
+  // URL path, not a query param) returns this program's hooks, and the
+  // counterparty-gate hook's ruleConfig embeds the REAL, resolved merchant
+  // ids it enforces (`{field:"merchant.id", op:"in", value:[...]}`) —
+  // verified consistent across kit 1 (10 ids), kit 2 (3 ids), and kit 3 (1
+  // id). That's ground truth for which merchant id is THIS program's for
+  // every merchant actually covered by a counterparty rule. Merchants
+  // deliberately excluded from every hook (e.g. the unapproved-counterparty
+  // test merchants) aren't covered by any rule, so for those we fall back to
+  // the newest-match-by-name heuristic against the (unfiltered) full
+  // /merchants list — the response is consistently ordered newest-first, so
+  // the first name match is this program's freshly-seeded merchant, not a
+  // stale one from an earlier seeding. This whole thing is a workaround for
+  // platform bugs, not a proper fix; report them to the platform team.
+  const hooksRes = await client.get<{ hooks: Array<{ ruleConfig?: string | null }> }>(`/programs/${programSlug}/hooks`);
+  const hookApprovedMerchantIds = new Set<string>();
+  for (const hook of hooksRes.hooks) {
+    if (!hook.ruleConfig) continue;
+    let parsed: { all?: Array<{ field?: string; op?: string; value?: unknown }> };
+    try {
+      parsed = JSON.parse(hook.ruleConfig);
+    } catch {
+      continue;
+    }
+    for (const cond of parsed.all ?? []) {
+      if (cond.field === "merchant.id" && cond.op === "in" && Array.isArray(cond.value)) {
+        for (const id of cond.value) if (typeof id === "string") hookApprovedMerchantIds.add(id);
+      }
+    }
+  }
+
   const merchantsRes = await client.get<{ merchants: Array<{ id: string; name: string }> }>(
     `/merchants?programId=${encodeURIComponent(programId)}`,
   );
-  const byName = new Map<string, string>();
+  const candidatesByName = new Map<string, string[]>();
   for (const m of merchantsRes.merchants) {
-    if (!byName.has(m.name)) byName.set(m.name, m.id);
+    const arr = candidatesByName.get(m.name);
+    if (arr) arr.push(m.id);
+    else candidatesByName.set(m.name, [m.id]);
   }
 
   const resolvedMerchants = scenario.merchants.map((m) => {
-    const id = byName.get(m.name);
+    const candidates = candidatesByName.get(m.name) ?? [];
+    const id = candidates.find((c) => hookApprovedMerchantIds.has(c)) ?? candidates[0];
     if (!id) {
       throw new Error(
         `Merchant "${m.name}" (ref "${m.ref}") not found via GET /merchants?programId=${programId} — ` +
           `did seed-kit.ts run for this org/kit? (kit="${scenario.kit}")`,
       );
     }
-    return { ref: m.ref, id, name: m.name, approvedCategories: m.approvedCategories };
+    return { ref: m.ref, id, name: m.name, approvedCategories: m.approvedCategories, approvedCounterparty: m.approvedCounterparty };
   });
 
   const resolvedActors = scenario.actors.map((a) => ({
@@ -227,7 +268,7 @@ function generateAllActions(scenario: Scenario, world: PersonaWorld, runId: stri
 
 export async function runScenario(args: CliArgs, scenario: Scenario): Promise<{ outcomes: ReplayOutcome[]; labelsPath: string }> {
   const client = new ArenaApiClient({ baseUrl: args.baseUrl, apiKey: args.apiKey });
-  const target = await resolveTarget(client, scenario, args.org);
+  const target = await resolveTarget(client, scenario, args.org, args.freshLabel);
   const speed = args.mode === "continuous" ? scenario.simTimeSpeed : args.speed;
   const defaultRate = args.mode === "continuous" ? 20 : 300;
   const limiter = new RateLimiter(args.rateLimitPerMin ?? defaultRate);

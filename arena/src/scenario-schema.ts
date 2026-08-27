@@ -32,6 +32,8 @@ export const scenarioMerchantSchema = z.object({
   /** Must match the merchant's `name` as seeded on the platform — resolved to a real id via GET /merchants at engine startup. */
   name: z.string().min(1),
   approvedCategories: z.array(z.string().min(1)).min(1),
+  /** On the counterparty allowlist? Defaults to true — set false for a merchant deliberately outside it (e.g. used for unapproved-counterparty/mule scenarios) even though it matches approvedCategories. See MerchantInfo's doc comment. */
+  approvedCounterparty: z.boolean().default(true),
 });
 
 export const scenarioSchema = z.object({

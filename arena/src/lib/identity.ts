@@ -26,3 +26,17 @@ export function actorPrivyUserId(kitId: string, orgId: string, actorRef: string)
 export function programSlugFor(slugPrefix: string, orgId: string): string {
   return `${slugPrefix}-${orgId.slice(-8)}`.toLowerCase();
 }
+
+/**
+ * Composes a --fresh-label slug prefix — must match synthetic.ts::freshSlugPrefix
+ * byte-for-byte, so `--fresh-label=<label>` here derives the exact same
+ * program slug that `seed-kit.ts --fresh=<label>` created. Pure string
+ * composition — does not itself call the platform.
+ */
+export function freshSlugPrefix(basePrefix: string, label: string): string {
+  const safeLabel = label
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `${basePrefix}-${safeLabel}`;
+}

@@ -20,3 +20,24 @@ export function actorPrivyUserId(kitId: string, orgId: string, actorRef: string)
 export function programSlugFor(slugPrefix: string, orgId: string): string {
   return `${slugPrefix}-${orgId.slice(-8)}`.toLowerCase();
 }
+
+/**
+ * Composes a --fresh slug prefix: base prefix + a sanitized label, so
+ * `programSlugFor` derives a program slug that's never been seen before
+ * instead of the one fixed slug a (kitId, orgId) pair always maps to. Label
+ * is sanitized to stay slug-safe (lowercase alphanumeric + hyphens only,
+ * no leading/trailing hyphens) since it flows straight into a URL path
+ * segment. Pure string composition — does not itself call the platform.
+ *
+ * This must stay byte-identical to arena/src/lib/identity.ts's copy (same
+ * relationship as actorPrivyUserId/programSlugFor above) so seed-kit.ts
+ * --fresh=<label> and arena's --fresh-label=<label> always derive the same
+ * program slug for the same label.
+ */
+export function freshSlugPrefix(basePrefix: string, label: string): string {
+  const safeLabel = label
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return `${basePrefix}-${safeLabel}`;
+}

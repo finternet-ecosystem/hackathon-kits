@@ -12,9 +12,9 @@ const world: PersonaWorld = {
     { ref: "child-4-restricted", privyUserId: "hackathon-kit:agent-mandate:testorg:child-4-restricted", budget: 5000, allowedCategories: ["OFFICE", "LOGISTICS", "SOFTWARE", "TRAVEL"] },
   ],
   merchants: [
-    { ref: "m1", id: "merch-1", name: "Acme Office Supplies", approvedCategories: ["OFFICE"] },
-    { ref: "m3", id: "merch-3", name: "CloudStack Software", approvedCategories: ["SOFTWARE"] },
-    { ref: "m11", id: "merch-11", name: "Krypton Courier (unapproved)", approvedCategories: ["LOGISTICS"] },
+    { ref: "m1", id: "merch-1", name: "Acme Office Supplies", approvedCategories: ["OFFICE"], approvedCounterparty: true },
+    { ref: "m3", id: "merch-3", name: "CloudStack Software", approvedCategories: ["SOFTWARE"], approvedCounterparty: true },
+    { ref: "m11", id: "merch-11", name: "Krypton Courier (unapproved)", approvedCategories: ["LOGISTICS"], approvedCounterparty: false },
   ],
 };
 

@@ -60,6 +60,14 @@ npx tsx run-stream.ts --kit=agent-mandate --speed=60
 
 `seed-kit.ts` is idempotent. Re-running against an already-seeded org reprints the summary and creates nothing new.
 
+Want a clean slate instead of reusing what's already seeded for your org? Add `--fresh`:
+
+```bash
+npx tsx seed-kit.ts --kit=agent-mandate --fresh
+```
+
+This creates a brand-new, fully isolated program (its own merchants, actors, Hooks) instead of reusing the one already seeded for your org — useful once you've been experimenting and want a fresh start. `run-stream.ts` automatically follows the new program, no flags needed. Arena needs the label explicitly: pass `--fresh-label=<label>` (the label `seed-kit.ts` prints) to `engine.ts`.
+
 Want a measurable score instead of just watching the allow/deny stream? Point [**Arena**](arena/README.md) at the same org:
 
 ```bash
@@ -316,7 +324,7 @@ Honest platform behavior these kits run into:
 |-------|----------------|
 | **SSE / webhook denials** | Hooks deny at `/payments/quote` the same as authorize, but quote-time denials do **not** emit `payment.declined`. SSE (`GET /events/stream`) and webhooks often show authorized events only. Decisions still appear in audit APIs. Score kits with `labels.jsonl` + audits, not the live denial stream alone. |
 | **Velocity Hooks** | Rate limits use **wall-clock** time, not `X-Sim-Time`. Very high `--speed` can collide with caps. Kit scenario counts are sized to stay under default caps. |
-| **No program reset** | There is no public “wipe program” API. Need a fresh world? Ask organizers for a new org, or Enable on another portal account. `rotate` remints the key on the same org; it does not clear programs. |
+| **No program reset** | There is still no public “wipe program” API. `seed-kit.ts --kit=<id> --fresh` (or `--fresh=<label>`) self-serves a clean world: it creates a brand-new, isolated program under a label-suffixed slug instead of reusing the deterministic one for your org. It does **not** delete anything — the old program's merchants and actors still exist on the platform, just orphaned. `run-stream.ts`/`watch-chain.ts` follow the new program automatically; Arena needs `--fresh-label=<label>` to match. `rotate` remints the key on the same org; it does not clear programs. |
 | **Kit 3 chain ops** | Real on-chain mint needs contracts configured on the shared backend. Without them, CHW enrol falls back to off-chain enrollment. CHW-enrolled actors cannot run `/payments/quote`. The kit splits actors: mint vs payment stream. |
 | **watch-chain flags** | `--kit`/`--org` resolves the addresses via `GET /programs/:slug`, so it needs an API key and a program whose contracts are deployed. Pass `--factory`/`--treasury` explicitly if you deployed them yourself. |
 | **Phone format** | Self-enrol accepts a narrow phone shape; synthetics use `9999…` numbers. |
