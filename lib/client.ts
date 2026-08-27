@@ -23,6 +23,26 @@ export class KitApiError extends Error {
   }
 }
 
+// Observed on the live shared sandbox: /payments/authorize's on-chain settlement
+// path intermittently 500s on the first attempt and succeeds on an immediate
+// retry with the identical request. Retrying ONLY 5xx (never 4xx — those are
+// real policy decisions like a 403 rate-limit denial, and retrying them would
+// just waste calls and risk tripping velocity caps further) turns that
+// transient infra flakiness back into a clean allow/deny signal.
+const MAX_5XX_RETRIES = 2;
+const RETRY_BACKOFF_MS = [400, 900];
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function finishRequest<T>(method: string, path: string, res: Response, parsed: unknown): T {
+  if (!res.ok) {
+    throw new KitApiError(method, path, res.status, parsed);
+  }
+  return parsed as T;
+}
+
 export class KitApiClient {
   constructor(private opts: KitApiClientOptions) {}
 
@@ -33,30 +53,36 @@ export class KitApiClient {
     extraHeaders?: Record<string, string>,
   ): Promise<T> {
     const url = `${this.opts.baseUrl.replace(/\/$/, "")}${path}`;
-    const res = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        // Omitted rather than sent empty so callers that authenticate another
-        // way (approve-proposal.ts uses a portal bearer token) send no key at all.
-        ...(this.opts.apiKey ? { "x-api-key": this.opts.apiKey } : {}),
-        ...extraHeaders,
-      },
-      ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-    });
-    const text = await res.text();
-    let parsed: unknown = null;
-    if (text) {
-      try {
-        parsed = JSON.parse(text);
-      } catch {
-        parsed = text;
+    let attempt = 0;
+    for (;;) {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          // Omitted rather than sent empty so callers that authenticate another
+          // way (approve-proposal.ts uses a portal bearer token) send no key at all.
+          ...(this.opts.apiKey ? { "x-api-key": this.opts.apiKey } : {}),
+          ...extraHeaders,
+        },
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      });
+      const text = await res.text();
+      let parsed: unknown = null;
+      if (text) {
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = text;
+        }
       }
+      if (!res.ok && res.status >= 500 && attempt < MAX_5XX_RETRIES) {
+        console.warn(`  [retry] ${method} ${path} -> ${res.status}, retrying (attempt ${attempt + 2}/${MAX_5XX_RETRIES + 1})...`);
+        await sleep(RETRY_BACKOFF_MS[attempt] ?? 1000);
+        attempt += 1;
+        continue;
+      }
+      return finishRequest<T>(method, path, res, parsed);
     }
-    if (!res.ok) {
-      throw new KitApiError(method, path, res.status, parsed);
-    }
-    return parsed as T;
   }
 
   get<T = unknown>(path: string, extraHeaders?: Record<string, string>): Promise<T> {
