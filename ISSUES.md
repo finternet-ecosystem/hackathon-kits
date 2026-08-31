@@ -119,25 +119,51 @@ degenerates to "everything ever", or "nothing", depending on which side of
 the kit's fixed reference week the real clock currently sits. Both sides
 of the comparison need to agree on which clock they're using.
 
-**Fix written, not yet merged:** `backend/src/services/hook-engine.ts`
-(Stage 3 windowStart) and `services/velocity.ts::checkVelocity` now take
-`ctx.simulatedNow`/`opts.now`; `finalizeResult`'s `evaluationAudit.create`
-now stamps `createdAt: ctx.simulatedNow ?? new Date()` instead of leaving
-it to the Prisma default. Safe by construction — `simulatedNow` already
-falls back to the real clock in live mode or with no `X-Sim-Time` header
+**Fix shipped and live-verified; upstream PR still pending merge:**
+`backend/src/services/hook-engine.ts` (Stage 3 `windowStart`) and
+`services/velocity.ts::checkVelocity` now take `ctx.simulatedNow`/`opts.now`;
+`finalizeResult`'s `evaluationAudit.create` now stamps
+`createdAt: ctx.simulatedNow ?? new Date()` instead of leaving it to the
+Prisma default. Safe by construction — `simulatedNow` already falls back
+to the real clock in live mode or with no `X-Sim-Time` header
 (`middleware/sim-time.ts`), so this only changes behavior for DEMO/test-mode
-replay traffic. Covered by new tests in
-`backend/src/services/__tests__/hook-engine-k4-k7.test.ts` (a stateful
-test proves rows correctly roll off a simulated-time window; reverting the
-`createdAt` line alone makes that test fail, confirming both halves of the
-fix are load-bearing).
+replay traffic.
 
-Even after this lands, repeated replay runs against the same (non-`--fresh`)
+A follow-up fix closed a second gap the first one exposed: the window
+query only ever had a lower bound (`createdAt >= windowStart`), never an
+upper one. Harmless on a real clock (nothing can have a `createdAt` "in
+the future" relative to a later query), but not once `createdAt` reflects
+simulated time and a single replay run sends `X-Sim-Time` non-monotonically
+— e.g. a kit scripts one scenario at simulated Thursday and a later
+(in real execution order) scenario at simulated Monday, so that
+Monday-anchored check's `gte`-only window still counted Thursday's rows.
+Verified live: this was exactly why Kit 1's `out-of-hours-burst` scenario
+kept getting denied by the velocity gate instead of the business-hours
+rule it's built to test, even after the first fix landed. Fixed by adding
+`lte: simulatedNow` alongside the existing `gte: windowStart` in both
+places.
+
+Both fixes are covered by tests in
+`backend/src/services/__tests__/hook-engine-k4-k7.test.ts` (including a
+stateful test reproducing the exact Thursday/Monday non-monotonic-replay
+scenario, verified to fail honestly on a revert) and committed
+(`96d605e`, `e154d2b`) and pushed to `poshan-voucher-stack@feat/cdir-hackathon`,
+built and deployed to the hackathon backend
+(`vouchcdirhackathon.azurecr.io/backend:cdir`), and live-verified end to
+end via two full Kit 1 replays against the deployed service: 4/18
+compliant transactions wrongly denied and ~1/6 fraud scenarios correctly
+attributed → 0/18 wrongly denied and 6/6 correctly attributed. The
+upstream PR (`poshan-voucher-stack#113`) that would bring this to `main`
+is a separate, much larger existing PR (the whole hackathon workstream,
+33 commits) and merging it is out of scope here — left for whoever owns
+that PR.
+
+Even after both fixes, repeated replay runs against the same (non-`--fresh`)
 program still share the kit's one fixed reference week, so run-to-run
 history can still accumulate — see `run-stream.ts`'s new `seededAt`
 startup log and the README "Known platform limitations" table.
 
-## Fixed in this repo (see `PR.md` for the pending one)
+## Fixed in this repo
 
 ### 5. Arena's `compliant-shopper`/`category-drifter` could pick an unapproved-counterparty merchant
 
@@ -149,7 +175,7 @@ excluded from the latter, to test unapproved-counterparty detection. Fixed
 by adding an explicit `approvedCounterparty` field to the scenario schema.
 Shipped in commit `4c2c92d`.
 
-### 6. CI failing on `Arena Node 20.x` since the workflow was added — **pending, see `PR.md`**
+### 6. CI failing on `Arena Node 20.x` since the workflow was added — fixed, `#3`
 
 `arena/package.json`'s `test` script passed `test/**/*.test.ts` to
 `tsx --test`. Node 20's test runner doesn't reliably resolve that
@@ -208,3 +234,15 @@ wrong reason. The other three kit manifests already had full
 `expectedReasonContains` coverage (or, for `disbursement-integrity`,
 intentionally have none — its violation scenarios are `expectAllowed:true`
 by design until `--after-tighten`).
+
+### 10. Flaky `arena/test/rate-limiter.test.ts` timing assertion, `#5`
+
+Its "never exceeds maxPerWindow requests within any windowMs interval"
+test records `Date.now()` immediately after `acquire()` resolves, with no
+tolerance for CI scheduling jitter between the limiter's internal
+slot-consumption instant and that measurement — unlike the very next test
+in the same file, which already tolerates this exact class of slop
+(`elapsed >= windowMs - 50`). Reproduced live: failed twice in a row on
+GitHub Actions' Node 22.x runner (20.x/24.x passed the same run), surfaced
+while getting the two PRs above to a clean CI run. Fixed by applying the
+same 50ms tolerance to the window-membership check.
