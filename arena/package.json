@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "NODE_NO_WARNINGS=1 npx tsx --test test/**/*.test.ts",
+    "test": "NODE_NO_WARNINGS=1 npx tsx --test test/*.test.ts",
     "engine": "npx tsx src/engine.ts",
     "flags-api": "npx tsx src/flags-api.ts",
     "scorer": "npx tsx src/scorer.ts",
