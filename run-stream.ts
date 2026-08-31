@@ -135,9 +135,21 @@ async function replayPayment(
   });
   const intentId = intentRes.intentId;
 
-  const quoteRes = normalizeEither(await requestExpectingEither(client, "POST", "/payments/quote", { intentId }, headers));
+  const quoteRes = normalizeEither(
+    await requestExpectingEither<{ canProceed: boolean; reason: string | null }>(client, "POST", "/payments/quote", { intentId }, headers),
+  );
   if (!quoteRes.ok) {
     return { instance, txnRef: intentId, allowed: false, status: quoteRes.status, reason: extractReason(quoteRes.error) };
+  }
+  // A fully-ineligible cart (e.g. every item out of category/counterparty)
+  // still comes back as HTTP 200 with canProceed:false — /payments/quote and
+  // /payments/authorize report per-item eligibility in the response body,
+  // not via HTTP status. Treating a 200 as an unconditional allow here would
+  // silently score an ineligible-cart scenario as "allowed" (and would go on
+  // to authorize a $0 payment for nothing). Stop and report the platform's
+  // own reason instead of calling authorize.
+  if (quoteRes.data?.canProceed === false) {
+    return { instance, txnRef: intentId, allowed: false, status: quoteRes.status, reason: quoteRes.data.reason ?? undefined };
   }
 
   const authRes = normalizeEither(await requestExpectingEither(client, "POST", "/payments/authorize", { intentId }, headers));
@@ -156,13 +168,13 @@ function extractReason(body: unknown): string | undefined {
   return undefined;
 }
 
-/** Collapse requestExpectingEither's discriminated union into a plain { ok, status, error? } shape — sidesteps ternary-narrowing quirks at call sites. */
-function normalizeEither<T>(r: EitherResult<T>): { ok: boolean; status: number; error?: unknown } {
+/** Collapse requestExpectingEither's discriminated union into a plain { ok, status, error?, data? } shape — sidesteps ternary-narrowing quirks at call sites. */
+function normalizeEither<T>(r: EitherResult<T>): { ok: boolean; status: number; error?: unknown; data?: T } {
   if (r.ok === false) {
     const failed: { ok: false; status: number; error: unknown } = r;
     return { ok: false, status: failed.status, error: failed.error };
   }
-  return { ok: true, status: r.status };
+  return { ok: true, status: r.status, data: r.data };
 }
 
 async function replayMandateOp(
@@ -220,6 +232,13 @@ export async function runStream(args: CliArgs): Promise<{ outcomes: ReplayOutcom
   }
 
   console.log(`Replaying kit "${manifest.kitId}" (${manifest.title}) for org "${org.name}" — speed=${args.speed}x, run-id=${args.runId}`);
+  console.log(
+    `Reusing state seeded at ${state.seededAt} (program ${state.programSlug}). If you're scoring this run, ` +
+      `re-seed with "seed-kit.ts --kit=${manifest.kitId} --fresh" first — the rate-limit (velocity) hook windows ` +
+      `on simulated time (X-Sim-Time), and every replay of this kit reuses the same fixed reference week, so ` +
+      `repeated runs against this program without --fresh can still stack transactions into the same simulated ` +
+      `velocity window and inherit denial history from a previous run. See README "Known platform limitations".`,
+  );
 
   let templates = manifest.violationScript;
   if (args.only !== undefined) {
@@ -238,6 +257,7 @@ export async function runStream(args: CliArgs): Promise<{ outcomes: ReplayOutcom
   const byTemplate = new Map<string, TemplateSummary>();
 
   for (const instance of instances) {
+    const sentAt = new Date().toISOString();
     const outcome = instance.kind === "payment"
       ? await replayPayment(client, state, instance)
       : await replayMandateOp(client, state, instance);
@@ -247,6 +267,7 @@ export async function runStream(args: CliArgs): Promise<{ outcomes: ReplayOutcom
       labels.write({
         txnRef: outcome.txnRef,
         ts: simHourToIso(instance.simHourOfWeek),
+        sentAt,
         label: instance.violationType ? "violation" : "compliant",
         ...(instance.violationType ? { violationType: instance.violationType } : {}),
         kitScenarioId: instance.kitScenarioId,

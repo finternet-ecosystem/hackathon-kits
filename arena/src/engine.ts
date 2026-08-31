@@ -243,9 +243,22 @@ async function replayAction(
   const intentId = intentRes.intentId;
 
   await limiter.acquire();
-  const quoteRes = await client.requestEither("POST", "/payments/quote", { intentId }, headers);
+  const quoteRes = await client.requestEither<{ canProceed: boolean; reason: string | null }>(
+    "POST",
+    "/payments/quote",
+    { intentId },
+    headers,
+  );
   if (!quoteRes.ok) {
     return { action, txnRef: intentId, allowed: false, status: quoteRes.status, reason: extractReason(quoteRes.error) };
+  }
+  // A fully-ineligible cart still comes back as HTTP 200 with
+  // canProceed:false — eligibility is reported in the response body, not
+  // via HTTP status. Without this check a scenario built to prove the
+  // platform blocks it (e.g. out-of-category) would be scored "allowed",
+  // and authorize would go on to authorize a $0 payment for nothing.
+  if (quoteRes.data?.canProceed === false) {
+    return { action, txnRef: intentId, allowed: false, status: quoteRes.status, reason: quoteRes.data.reason ?? undefined };
   }
 
   await limiter.acquire();
@@ -292,12 +305,14 @@ export async function runScenario(args: CliArgs, scenario: Scenario): Promise<{ 
 
     for (const action of actions) {
       if (deadline !== undefined && Date.now() >= deadline) break;
+      const sentAt = new Date().toISOString();
       const outcome = await replayAction(client, limiter, target, action);
       outcomes.push(outcome);
 
       labels.write({
         txnRef: outcome.txnRef,
         ts: simHourToIso(action.simHourOfWeek),
+        sentAt,
         label: action.violationType ? "violation" : "compliant",
         ...(action.violationType ? { violationType: action.violationType } : {}),
         kitScenarioId: action.kitScenarioId,
