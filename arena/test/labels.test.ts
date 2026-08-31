@@ -13,10 +13,11 @@ after(() => {
 describe("labels — LabelsWriter / readLabels", () => {
   it("writes JSONL matching the kits' labels.jsonl format exactly and reads it back", async () => {
     const writer = new LabelsWriter(TEST_RUN_ID);
-    writer.write({ txnRef: "intent-1", ts: "2026-08-03T09:00:00.000Z", label: "compliant", kitScenarioId: "compliant-shopper-001" });
+    writer.write({ txnRef: "intent-1", ts: "2026-08-03T09:00:00.000Z", sentAt: "2026-08-31T10:00:00.000Z", label: "compliant", kitScenarioId: "compliant-shopper-001" });
     writer.write({
       txnRef: "intent-2",
       ts: "2026-08-03T02:00:00.000Z",
+      sentAt: "2026-08-31T10:00:01.000Z",
       label: "violation",
       violationType: "off_hours_burst",
       kitScenarioId: "night-burster-001",
@@ -31,13 +32,31 @@ describe("labels — LabelsWriter / readLabels", () => {
     assert.equal(records[1]!.violationType, "off_hours_burst");
   });
 
+  it("round-trips sentAt (real clock) as distinct from ts (simulated schedule time)", async () => {
+    const writer = new LabelsWriter(`${TEST_RUN_ID}-sentAt`);
+    writer.write({
+      txnRef: "intent-3",
+      ts: "2026-08-03T09:00:00.000Z", // simulated: fixed reference week
+      sentAt: "2026-08-31T10:00:00.000Z", // real: whenever this test actually ran
+      label: "compliant",
+      kitScenarioId: "s-1",
+    });
+    await writer.close();
+
+    const [record] = readLabels(`${TEST_RUN_ID}-sentAt`);
+    assert.equal(record!.ts, "2026-08-03T09:00:00.000Z");
+    assert.equal(record!.sentAt, "2026-08-31T10:00:00.000Z");
+    assert.notEqual(record!.ts, record!.sentAt);
+    fs.rmSync(artifactsRunDir(`${TEST_RUN_ID}-sentAt`), { recursive: true, force: true });
+  });
+
   it("readLabels returns an empty array for a run that was never written", () => {
     assert.deepEqual(readLabels("nonexistent-run-xyz"), []);
   });
 
   it("readLabelsFromPath reads an arbitrary file path (e.g. a run-stream.ts-produced labels.jsonl)", async () => {
     const writer = new LabelsWriter(`${TEST_RUN_ID}-alt`);
-    writer.write({ txnRef: "x", ts: "2026-08-03T09:00:00.000Z", label: "compliant", kitScenarioId: "s-1" });
+    writer.write({ txnRef: "x", ts: "2026-08-03T09:00:00.000Z", sentAt: "2026-08-31T10:00:00.000Z", label: "compliant", kitScenarioId: "s-1" });
     await writer.close();
     const records = readLabelsFromPath(writer.path);
     assert.equal(records.length, 1);
@@ -46,8 +65,8 @@ describe("labels — LabelsWriter / readLabels", () => {
 
   it("each line is valid, self-contained JSON (JSONL, not a JSON array)", async () => {
     const writer = new LabelsWriter(`${TEST_RUN_ID}-jsonl`);
-    writer.write({ txnRef: "a", ts: "2026-08-03T09:00:00.000Z", label: "compliant", kitScenarioId: "s-1" });
-    writer.write({ txnRef: "b", ts: "2026-08-03T09:00:00.000Z", label: "compliant", kitScenarioId: "s-2" });
+    writer.write({ txnRef: "a", ts: "2026-08-03T09:00:00.000Z", sentAt: "2026-08-31T10:00:00.000Z", label: "compliant", kitScenarioId: "s-1" });
+    writer.write({ txnRef: "b", ts: "2026-08-03T09:00:00.000Z", sentAt: "2026-08-31T10:00:01.000Z", label: "compliant", kitScenarioId: "s-2" });
     await writer.close();
     const raw = fs.readFileSync(writer.path, "utf-8");
     const lines = raw.split("\n").filter((l) => l.trim().length > 0);

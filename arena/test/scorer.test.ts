@@ -18,24 +18,31 @@ import type { FlagRecord } from "../src/flags-api";
 //   type A: total=3, detected=2 (txn1, txn2) -> recall 2/3
 //   type B: total=3, detected=1 (txn4)       -> recall 1/3
 //   latencies (TP only, ms): txn1=1000, txn2=3000, txn4=2000 -> mean=2000, p95=3000
+//
+// `ts` is deliberately a fixed simulated-week timestamp far from `sentAt`
+// (the real clock instant the fixture pretends the transaction was sent)
+// — latency must be computed from `sentAt`, never `ts`; a fixture where
+// they're miles apart would immediately expose a scorer that regressed
+// back to using `ts`.
 
-const baseTs = "2026-08-03T09:00:00.000Z"; // ts + Nms below is computed against this instant
+const baseTs = "2026-08-03T09:00:00.000Z"; // simulated schedule time — must NOT feed latency math
+const baseSentAt = "2026-08-31T09:00:00.000Z"; // real send time + Nms below is computed against this instant
 
 function tsPlus(ms: number): string {
-  return new Date(new Date(baseTs).getTime() + ms).toISOString();
+  return new Date(new Date(baseSentAt).getTime() + ms).toISOString();
 }
 
 const labels: LabelRecord[] = [
-  { txnRef: "txn1", ts: baseTs, label: "violation", violationType: "typeA", kitScenarioId: "s1" },
-  { txnRef: "txn2", ts: baseTs, label: "violation", violationType: "typeA", kitScenarioId: "s2" },
-  { txnRef: "txn3", ts: baseTs, label: "violation", violationType: "typeA", kitScenarioId: "s3" },
-  { txnRef: "txn4", ts: baseTs, label: "violation", violationType: "typeB", kitScenarioId: "s4" },
-  { txnRef: "txn5", ts: baseTs, label: "violation", violationType: "typeB", kitScenarioId: "s5" },
-  { txnRef: "txn6", ts: baseTs, label: "violation", violationType: "typeB", kitScenarioId: "s6" },
-  { txnRef: "txn7", ts: baseTs, label: "compliant", kitScenarioId: "s7" },
-  { txnRef: "txn8", ts: baseTs, label: "compliant", kitScenarioId: "s8" },
-  { txnRef: "txn9", ts: baseTs, label: "compliant", kitScenarioId: "s9" },
-  { txnRef: "txn10", ts: baseTs, label: "compliant", kitScenarioId: "s10" },
+  { txnRef: "txn1", ts: baseTs, sentAt: baseSentAt, label: "violation", violationType: "typeA", kitScenarioId: "s1" },
+  { txnRef: "txn2", ts: baseTs, sentAt: baseSentAt, label: "violation", violationType: "typeA", kitScenarioId: "s2" },
+  { txnRef: "txn3", ts: baseTs, sentAt: baseSentAt, label: "violation", violationType: "typeA", kitScenarioId: "s3" },
+  { txnRef: "txn4", ts: baseTs, sentAt: baseSentAt, label: "violation", violationType: "typeB", kitScenarioId: "s4" },
+  { txnRef: "txn5", ts: baseTs, sentAt: baseSentAt, label: "violation", violationType: "typeB", kitScenarioId: "s5" },
+  { txnRef: "txn6", ts: baseTs, sentAt: baseSentAt, label: "violation", violationType: "typeB", kitScenarioId: "s6" },
+  { txnRef: "txn7", ts: baseTs, sentAt: baseSentAt, label: "compliant", kitScenarioId: "s7" },
+  { txnRef: "txn8", ts: baseTs, sentAt: baseSentAt, label: "compliant", kitScenarioId: "s8" },
+  { txnRef: "txn9", ts: baseTs, sentAt: baseSentAt, label: "compliant", kitScenarioId: "s9" },
+  { txnRef: "txn10", ts: baseTs, sentAt: baseSentAt, label: "compliant", kitScenarioId: "s10" },
 ];
 
 const flags: FlagRecord[] = [
