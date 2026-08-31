@@ -5,8 +5,15 @@
  * Joins a team's reported flags against a run's ground-truth labels and
  * computes per-violation-type precision/recall, overall precision/recall/
  * false-positive-rate, and mean/95th-percentile latency-to-detection
- * (detectedAt - txn ts, true positives only). Outputs a markdown + JSON
- * report.
+ * (detectedAt - label.sentAt, true positives only — both real wall-clock
+ * timestamps). Outputs a markdown + JSON report.
+ *
+ * Latency deliberately uses `label.sentAt` (real clock), never `label.ts`
+ * (a simulated schedule timestamp anchored to a fixed reference week — see
+ * labels.ts). Diffing a real `detectedAt` against a simulated `ts` produces
+ * a latency number with no real-world meaning (it drifts by exactly 24h for
+ * every day that passes between the reference week and whenever the run
+ * happens), which is why this field exists.
  *
  * A txnRef present in labels.jsonl but never flagged is an implicit
  * negative prediction (the team's agent effectively said "compliant" for
@@ -108,7 +115,7 @@ export function scoreRun(labels: LabelRecord[], flags: FlagRecord[]): ScoreRepor
     if (isViolation && flagged) {
       truePositives += 1;
       const flag = flagByTxnRef.get(label.txnRef)!;
-      const latency = new Date(flag.detectedAt).getTime() - new Date(label.ts).getTime();
+      const latency = new Date(flag.detectedAt).getTime() - new Date(label.sentAt).getTime();
       if (Number.isFinite(latency)) latenciesMs.push(Math.max(0, latency));
     } else if (isViolation && !flagged) {
       falseNegatives += 1;

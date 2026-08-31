@@ -3,7 +3,7 @@
  * `lib/labels.ts` (own copy, not an import — arena has zero imports
  * outside `arena/`, see arena/README.md):
  *
- *   {txnRef, ts, label: "violation"|"compliant", violationType?, kitScenarioId}
+ *   {txnRef, ts, sentAt, label: "violation"|"compliant", violationType?, kitScenarioId}
  *
  * `label` is GROUND TRUTH from the persona (was this transaction scripted
  * as a violation attempt, regardless of whether the platform's policy
@@ -20,7 +20,10 @@ import path from "node:path";
 
 export interface LabelRecord {
   txnRef: string;
+  /** Simulated schedule time (X-Sim-Time sent with this transaction) — NOT a real clock reading. Never use for latency math; see `sentAt`. */
   ts: string;
+  /** Real wall-clock time (ISO 8601) this transaction was actually sent — the correct "detection started at" anchor for latency-to-detection scoring. */
+  sentAt: string;
   label: "violation" | "compliant";
   violationType?: string;
   kitScenarioId: string;

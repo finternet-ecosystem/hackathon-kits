@@ -505,7 +505,8 @@
       "simHourOfWeek": 61,
       "simHourSpread": 3,
       "intervalSeconds": 40,
-      "expectAllowed": false
+      "expectAllowed": false,
+      "expectedReasonContains": "No eligible items in cart"
     },
     {
       "id": "unapproved-counterparty",
@@ -588,7 +589,8 @@
       "simHourOfWeek": 13,
       "simHourSpread": 3,
       "intervalSeconds": 45,
-      "expectAllowed": false
+      "expectAllowed": false,
+      "expectedReasonContains": "cart.total"
     }
   ]
 }
