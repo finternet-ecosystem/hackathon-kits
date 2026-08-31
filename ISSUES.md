@@ -6,7 +6,7 @@ replacement — a working log so nothing found gets lost. File the "needs
 platform team" ones as real issues against `poshan-voucher-stack` when
 there's someone to triage them.
 
-## Open — needs the platform team (`poshan-voucher-stack`)
+## Open — needs the platform team (`vouch-stack`)
 
 ### 1. `GET /merchants?programId=` does not filter by program
 
