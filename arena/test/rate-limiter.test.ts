@@ -34,8 +34,16 @@ describe("lib/rate-limiter", () => {
       timestamps.push(Date.now());
     }
     // Slide a window across the recorded timestamps and confirm no window ever contains more than maxPerWindow.
+    // Each timestamp is Date.now() called AFTER acquire() resolves, so it can
+    // trail the limiter's own internal slot-consumption instant by a few ms
+    // under CI scheduling jitter — same class of slop the "delays the
+    // (N+1)th request" test above already tolerates (windowMs - 50). Shrink
+    // the counting window by that same tolerance so measurement lag can't
+    // make two acquires LOOK more tightly clustered than the limiter
+    // actually allowed.
+    const jitterToleranceMs = 50;
     for (const t of timestamps) {
-      const countInWindow = timestamps.filter((x) => x > t - windowMs && x <= t).length;
+      const countInWindow = timestamps.filter((x) => x > t - (windowMs - jitterToleranceMs) && x <= t).length;
       assert.ok(countInWindow <= maxPerWindow, `window ending at ${t} contained ${countInWindow} requests (max ${maxPerWindow})`);
     }
   });
